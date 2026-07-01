@@ -1,42 +1,56 @@
 import { useState } from "react";
 import type { Equipment } from "../types";
 
-type ColorDef = { bg: string; border: string; text: string; selectedBg: string; selectedBorder: string; selectedText: string };
+export type ColorDef = { bg: string; border: string; text: string; selectedBg: string; selectedBorder: string; selectedText: string };
 
-const TYPE_COLORS: Record<number, ColorDef> = {
+export const TYPE_COLORS: Record<number, ColorDef> = {
   1:  { bg: "#fdecea", border: "#e89090", text: "#a33028", selectedBg: "#e89090", selectedBorder: "#a33028", selectedText: "#fff" }, // 小口径主砲
   2:  { bg: "#fdecea", border: "#d87070", text: "#8b2020", selectedBg: "#d87070", selectedBorder: "#8b2020", selectedText: "#fff" }, // 中口径主砲
   3:  { bg: "#fde0de", border: "#c85050", text: "#7a1818", selectedBg: "#c85050", selectedBorder: "#7a1818", selectedText: "#fff" }, // 大口径主砲
-  4:  { bg: "#fdf8e0", border: "#e0c840", text: "#807010", selectedBg: "#e0c840", selectedBorder: "#807010", selectedText: "#fff" }, // 副砲
-  5:  { bg: "#e0f5f0", border: "#55b8a0", text: "#18806a", selectedBg: "#55b8a0", selectedBorder: "#18806a", selectedText: "#fff" }, // 魚雷
-  6:  { bg: "#e8f0fc", border: "#7aa8e8", text: "#2255aa", selectedBg: "#7aa8e8", selectedBorder: "#2255aa", selectedText: "#fff" }, // 艦上戦闘機
-  7:  { bg: "#fdf3e3", border: "#e8b060", text: "#a06818", selectedBg: "#e8b060", selectedBorder: "#a06818", selectedText: "#fff" }, // 艦上爆撃機
-  8:  { bg: "#fde8e0", border: "#e87850", text: "#a03818", selectedBg: "#e87850", selectedBorder: "#a03818", selectedText: "#fff" }, // 艦上攻撃機
-  9:  { bg: "#fdf3e3", border: "#e8c080", text: "#906820", selectedBg: "#e8c080", selectedBorder: "#906820", selectedText: "#fff" }, // 艦上偵察機
-  10: { bg: "#e8f4fc", border: "#80c8e8", text: "#1870a0", selectedBg: "#80c8e8", selectedBorder: "#1870a0", selectedText: "#fff" }, // 水上偵察機
-  11: { bg: "#e5f5e5", border: "#70bb70", text: "#267a26", selectedBg: "#70bb70", selectedBorder: "#267a26", selectedText: "#fff" }, // 電探(小型)
-  15: { bg: "#f5f8e0", border: "#a8c840", text: "#607010", selectedBg: "#a8c840", selectedBorder: "#607010", selectedText: "#fff" }, // 機銃
+  4:  { bg: "#fdfad0", border: "#e8d020", text: "#807000", selectedBg: "#e8d020", selectedBorder: "#807000", selectedText: "#fff" }, // 副砲
+  5:  { bg: "#e2e9f4", border: "#5c85b5", text: "#1f3a55", selectedBg: "#5c85b5", selectedBorder: "#1f3a55", selectedText: "#fff" }, // 魚雷
+  6:  { bg: "#e6f7e6", border: "#6cc060", text: "#1f7a20", selectedBg: "#6cc060", selectedBorder: "#1f7a20", selectedText: "#fff" }, // 艦上戦闘機
+  7:  { bg: "#fce8e6", border: "#e06858", text: "#a02818", selectedBg: "#e06858", selectedBorder: "#a02818", selectedText: "#fff" }, // 艦上爆撃機
+  8:  { bg: "#e6eefc", border: "#6f98e0", text: "#1f4890", selectedBg: "#6f98e0", selectedBorder: "#1f4890", selectedText: "#fff" }, // 艦上攻撃機
+  9:  { bg: "#fdf8d8", border: "#e8d040", text: "#807010", selectedBg: "#e8d040", selectedBorder: "#807010", selectedText: "#fff" }, // 艦上偵察機
+  10: { bg: "#e6f5e0", border: "#6cb050", text: "#2f6018", selectedBg: "#6cb050", selectedBorder: "#2f6018", selectedText: "#fff" }, // 水上偵察機
+  11: { bg: "#fdefd6", border: "#e2a838", text: "#7a5008", selectedBg: "#e2a838", selectedBorder: "#7a5008", selectedText: "#fff" }, // 電探(小型)
+  50: { bg: "#e9e0ee", border: "#846092", text: "#3e2a50", selectedBg: "#846092", selectedBorder: "#3e2a50", selectedText: "#fff" }, // 水上偵察機(夜偵)
+  15: { bg: "#e8f5e0", border: "#78b850", text: "#3a7018", selectedBg: "#78b850", selectedBorder: "#3a7018", selectedText: "#fff" }, // 機銃
   16: { bg: "#e8f5e8", border: "#60c060", text: "#206020", selectedBg: "#60c060", selectedBorder: "#206020", selectedText: "#fff" }, // 高角砲
   17: { bg: "#dceef8", border: "#4898c8", text: "#185880", selectedBg: "#4898c8", selectedBorder: "#185880", selectedText: "#fff" }, // 爆雷
+  12: { bg: "#fbdcd6", border: "#d85838", text: "#8a2810", selectedBg: "#d85838", selectedBorder: "#8a2810", selectedText: "#fff" }, // 三式弾
+  13: { bg: "#f7f6f2", border: "#b0ac9c", text: "#4a4740", selectedBg: "#b0ac9c", selectedBorder: "#4a4740", selectedText: "#fff" }, // 徹甲弾
   18: { bg: "#e0f0f8", border: "#60aad0", text: "#1a6890", selectedBg: "#60aad0", selectedBorder: "#1a6890", selectedText: "#fff" }, // ソナー
-  37: { bg: "#f0eafa", border: "#9878d0", text: "#5030a0", selectedBg: "#9878d0", selectedBorder: "#5030a0", selectedText: "#fff" }, // 陸上攻撃機
-  38: { bg: "#ece8fa", border: "#8068c0", text: "#402890", selectedBg: "#8068c0", selectedBorder: "#402890", selectedText: "#fff" }, // 局地戦闘機
-  44: { bg: "#e8eaf8", border: "#7080c8", text: "#304090", selectedBg: "#7080c8", selectedBorder: "#304090", selectedText: "#fff" }, // 陸上戦闘機(三式戦等)
+  19: { bg: "#fdf8d0", border: "#e8d030", text: "#807008", selectedBg: "#e8d030", selectedBorder: "#807008", selectedText: "#fff" }, // 機関部強化(缶)
+  20: { bg: "#f0e6d8", border: "#a87850", text: "#5a3818", selectedBg: "#a87850", selectedBorder: "#5a3818", selectedText: "#fff" }, // 上陸用舟艇
+  23: { bg: "#f0e6f5", border: "#b088c8", text: "#603878", selectedBg: "#b088c8", selectedBorder: "#603878", selectedText: "#fff" }, // バルジ
+  24: { bg: "#fde8d8", border: "#e88840", text: "#a04808", selectedBg: "#e88840", selectedBorder: "#a04808", selectedText: "#fff" }, // 探照灯
+  25: { bg: "#e8e8e8", border: "#a0a0a0", text: "#505050", selectedBg: "#a0a0a0", selectedBorder: "#505050", selectedText: "#fff" }, // ドラム缶(輸送用)
+  30: { bg: "#e2ead0", border: "#748038", text: "#384610", selectedBg: "#748038", selectedBorder: "#384610", selectedText: "#fff" }, // 高射装置
+  54: { bg: "#e6e8ea", border: "#8a95a0", text: "#404850", selectedBg: "#8a95a0", selectedBorder: "#404850", selectedText: "#fff" }, // 発煙装置(煙幕)
+  21: { bg: "#e0f5e0", border: "#4caa48", text: "#1f6a1a", selectedBg: "#4caa48", selectedBorder: "#1f6a1a", selectedText: "#fff" }, // カ号観測機
+  22: { bg: "#e0f4fa", border: "#5cb8d8", text: "#1a6888", selectedBg: "#5cb8d8", selectedBorder: "#1a6888", selectedText: "#fff" }, // 連絡機
+  37: { bg: "#e2f0dc", border: "#5a9548", text: "#2a5818", selectedBg: "#5a9548", selectedBorder: "#2a5818", selectedText: "#fff" }, // 陸上攻撃機
+  38: { bg: "#dcf0d8", border: "#4c9c48", text: "#1f5c18", selectedBg: "#4c9c48", selectedBorder: "#1f5c18", selectedText: "#fff" }, // 局地戦闘機
+  42: { bg: "#e2eef8", border: "#78a8d8", text: "#2a5888", selectedBg: "#78a8d8", selectedBorder: "#2a5888", selectedText: "#fff" }, // 潜水艦搭載電探
+  44: { bg: "#e6f5e0", border: "#6cb050", text: "#2f6018", selectedBg: "#6cb050", selectedBorder: "#2f6018", selectedText: "#fff" }, // 陸上戦闘機(三式戦等)
   47: { bg: "#e8e4f8", border: "#7060b0", text: "#382080", selectedBg: "#7060b0", selectedBorder: "#382080", selectedText: "#fff" }, // 対潜哨戒機
   49: { bg: "#e4e0f8", border: "#6050a8", text: "#301870", selectedBg: "#6050a8", selectedBorder: "#301870", selectedText: "#fff" }, // 大型陸上機
 };
 
-const DEFAULT_COLOR: ColorDef = { bg: "#f2f3f4", border: "#aab0b8", text: "#4a5568", selectedBg: "#aab0b8", selectedBorder: "#4a5568", selectedText: "#fff" };
+export const DEFAULT_COLOR: ColorDef = { bg: "#f2f3f4", border: "#aab0b8", text: "#4a5568", selectedBg: "#aab0b8", selectedBorder: "#4a5568", selectedText: "#fff" };
 
 interface Props {
   equipment: Equipment[];
   developableIds: Set<number>;
   selectedIds: number[];
+  disabledIds: Set<number>;
   categories: { label: string; typeIds: number[] }[];
   onToggle: (id: number) => void;
 }
 
-export function EquipmentSelector({ equipment, developableIds, selectedIds, categories, onToggle }: Props) {
+export function EquipmentSelector({ equipment, developableIds, selectedIds, disabledIds, categories, onToggle }: Props) {
   const [activeCats, setActiveCats] = useState<Set<string>>(new Set());
 
   function toggleCat(label: string) {
@@ -70,9 +84,9 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, cate
           onClick={() => setActiveCats(new Set())}
           style={{
             fontSize: 13, padding: "4px 14px", borderRadius: "var(--radius)",
-            border: "0.5px solid var(--border-strong)",
-            background: allActive ? "#2C2C2A" : "transparent",
-            color: allActive ? "#F1EFE8" : "var(--text-secondary)",
+            border: `0.5px solid ${allActive ? "var(--border-accent)" : "var(--border-strong)"}`,
+            background: allActive ? "var(--bg-accent)" : "transparent",
+            color: allActive ? "var(--text-accent)" : "var(--text-secondary)",
             cursor: "pointer",
           }}
         >
@@ -84,9 +98,9 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, cate
             onClick={() => toggleCat(cat.label)}
             style={{
               fontSize: 13, padding: "4px 14px", borderRadius: "var(--radius)",
-              border: "0.5px solid var(--border-strong)",
-              background: activeCats.has(cat.label) ? "#2C2C2A" : "transparent",
-              color: activeCats.has(cat.label) ? "#F1EFE8" : "var(--text-secondary)",
+              border: `0.5px solid ${activeCats.has(cat.label) ? "var(--border-accent)" : "var(--border-strong)"}`,
+              background: activeCats.has(cat.label) ? "var(--bg-accent)" : "transparent",
+              color: activeCats.has(cat.label) ? "var(--text-accent)" : "var(--text-secondary)",
               cursor: "pointer",
             }}
           >
@@ -96,7 +110,7 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, cate
       </div>
       <div style={{
         display: "flex", flexDirection: "column", gap: 10,
-        maxHeight: 260, overflowY: "auto",
+        height: 260, minHeight: 120, maxHeight: "80vh", overflowY: "auto", resize: "vertical",
         border: "0.5px solid var(--border)", borderRadius: 12, padding: 14,
       }}>
         {visible.map((cat, i) => (
@@ -105,17 +119,21 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, cate
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {cat.items.map((eq) => {
                 const selected = selectedIds.includes(eq.id);
+                const disabled = !selected && disabledIds.has(eq.id);
                 const c = TYPE_COLORS[eq.iconType] ?? DEFAULT_COLOR;
                 return (
                   <button
                     key={eq.id}
+                    disabled={disabled}
                     onClick={() => onToggle(eq.id)}
+                    title={disabled ? "選択中の装備と同時には開発できません" : undefined}
                     style={{
                       fontSize: 13, padding: "4px 10px", borderRadius: "var(--radius)",
-                      border: `0.5px solid ${selected ? c.selectedBorder : c.border}`,
-                      background: selected ? c.selectedBg : c.bg,
-                      color: selected ? c.selectedText : c.text,
-                      cursor: "pointer",
+                      border: `0.5px solid ${disabled ? "var(--border)" : selected ? c.selectedBorder : c.border}`,
+                      background: disabled ? "var(--surface-1)" : selected ? c.selectedBg : c.bg,
+                      color: disabled ? "var(--text-muted)" : selected ? c.selectedText : c.text,
+                      cursor: disabled ? "not-allowed" : "pointer",
+                      opacity: disabled ? 0.5 : 1,
                     }}
                   >
                     {eq.name}

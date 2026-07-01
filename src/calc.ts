@@ -122,6 +122,74 @@ function calcResult(
   };
 }
 
+function missingTargets(slots: SlotMap, resources: Resources, targets: Equipment[]): Equipment[] {
+  return targets.filter(
+    (eq) =>
+      !(
+        (slots[eq.id] || 0) > 0 &&
+        resources.fuel >= eq.req.fuel * 10 &&
+        resources.ammo >= eq.req.ammo * 10 &&
+        resources.steel >= eq.req.steel * 10 &&
+        resources.bauxite >= eq.req.bauxite * 10
+      )
+  );
+}
+
+// targetIdsを同時に開発できる秘書艦種・テーブルの組み合わせが1つでも存在するかを判定する
+// （艦別overrideは、不足している対象装備にto.idが一致するものだけ確認すれば十分なため軽量）
+export function isCombinable(
+  targetIds: number[],
+  hqLevel: number,
+  equipment: Equipment[],
+  overrides: Override[],
+  devTableData: DevTableData
+): boolean {
+  const equipmentById = new Map(equipment.map((e) => [e.id, e]));
+  const targets = targetIds.map((id) => equipmentById.get(id)).filter((e): e is Equipment => !!e);
+  if (targets.length === 0) return true;
+  if (targets.some((eq) => hqLevel < eq.rarity * 10)) return false;
+
+  const relevantOverrideMinReq = overrides
+    .filter((o) => o.shipIds.length === 0 && o.to.id !== null && targets.some((t) => t.id === o.to.id))
+    .reduce(
+      (acc, o) => ({
+        fuel: Math.max(acc.fuel, o.minResources.fuel),
+        ammo: Math.max(acc.ammo, o.minResources.ammo),
+        steel: Math.max(acc.steel, o.minResources.steel),
+        bauxite: Math.max(acc.bauxite, o.minResources.bauxite),
+      }),
+      { fuel: 0, ammo: 0, steel: 0, bauxite: 0 }
+    );
+
+  const baseMinReq: Resources = {
+    fuel: Math.max(...targets.map((e) => Math.max(e.req.fuel * 10, 10)), relevantOverrideMinReq.fuel),
+    ammo: Math.max(...targets.map((e) => Math.max(e.req.ammo * 10, 10)), relevantOverrideMinReq.ammo),
+    steel: Math.max(...targets.map((e) => Math.max(e.req.steel * 10, 10)), relevantOverrideMinReq.steel),
+    bauxite: Math.max(...targets.map((e) => Math.max(e.req.bauxite * 10, 10)), relevantOverrideMinReq.bauxite),
+  };
+
+  for (const secretaryType of SECRETARY_TYPES) {
+    for (const table of TABLES) {
+      const resources = adjustForTable(baseMinReq, table);
+      const baseSlots = buildBaseSlots(equipmentById, devTableData, secretaryType, table);
+      const baseModifiedSlots = applyOverrides(baseSlots, overrides, secretaryType, table, resources, null);
+
+      const missing = missingTargets(baseModifiedSlots, resources, targets);
+      if (missing.length === 0) return true;
+
+      const missingIds = new Set(missing.map((e) => e.id));
+      const candidateOverrides = overrides.filter(
+        (o) => o.secretary === secretaryType && o.table === table && o.shipIds.length > 0 && o.to.id !== null && missingIds.has(o.to.id)
+      );
+      for (const o of candidateOverrides) {
+        const modified = applyOverrides(baseSlots, overrides, secretaryType, table, resources, o.shipIds[0]);
+        if (allTargetsAvailable(modified, resources, targets)) return true;
+      }
+    }
+  }
+  return false;
+}
+
 export function calcOptimal(
   targetIds: number[],
   hqLevel: number,
@@ -177,15 +245,19 @@ export function calcOptimal(
         ),
       ];
 
-      // overrideによりbaseと異なる結果になる艦を収集（除外すべき艦）
+      const baseResult = calcResult(baseModifiedSlots, resources, targets, equipmentById, hqLevel);
+
+      // overrideにより対象開発率・開発失敗率がbaseと異なる艦を収集（除外すべき艦）
       const excludedShipIds = shipIdsWithOverride.filter((shipId) => {
         const modified = applyOverrides(baseSlots, overrides, secretaryType, table, resources, shipId);
-        return JSON.stringify(modified) !== JSON.stringify(baseModifiedSlots);
+        const modResult = calcResult(modified, resources, targets, equipmentById, hqLevel);
+        if (!modResult && !baseResult) return false;
+        if (!modResult || !baseResult) return true;
+        return modResult.successSlots !== baseResult.successSlots || modResult.failSlots !== baseResult.failSlots;
       });
 
-      if (allTargetsAvailable(baseModifiedSlots, resources, targets)) {
-        const result = calcResult(baseModifiedSlots, resources, targets, equipmentById, hqLevel);
-        if (result) candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result });
+      if (allTargetsAvailable(baseModifiedSlots, resources, targets) && baseResult) {
+        candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseResult });
       }
 
       for (const shipId of shipIdsWithOverride) {
@@ -198,7 +270,6 @@ export function calcOptimal(
         const result = calcResult(modified, resources, targets, equipmentById, hqLevel);
         if (!result) continue;
 
-        const baseResult = calcResult(baseModifiedSlots, resources, targets, equipmentById, hqLevel);
         if (!baseResult || result.successSlots !== baseResult.successSlots) {
           // 同じスロット構成の艦をグループ化
           const existing = candidates.find(
@@ -219,7 +290,11 @@ export function calcOptimal(
     c.result.expectedCost.fuel + c.result.expectedCost.ammo +
     c.result.expectedCost.steel + c.result.expectedCost.bauxite;
 
-  candidates.sort((a, b) => b.result.failRate - a.result.failRate || totalCost(a) - totalCost(b));
+  candidates.sort((a, b) =>
+    b.result.successRate - a.result.successRate ||
+    b.result.failRate - a.result.failRate ||
+    totalCost(a) - totalCost(b)
+  );
 
   return { candidates, baseMinReq };
 }

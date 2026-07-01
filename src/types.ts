@@ -14,6 +14,12 @@ export interface Ship {
   afterId: number | null;
 }
 
+export interface ShipType {
+  id: number;
+  name: string;
+  code: string;
+}
+
 export interface Override {
   id: number;
   shipIds: number[];

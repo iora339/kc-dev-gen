@@ -1,12 +1,15 @@
 import { useState, useMemo, useEffect } from "react";
 import { useData } from "./useData";
-import { calcOptimal } from "./calc";
+import { calcOptimal, isCombinable } from "./calc";
 import type { Candidate } from "./types";
-import { EquipmentSelector } from "./components/EquipmentSelector";
-import { ResultCard } from "./components/ResultCard";
+import { EquipmentSelector, TYPE_COLORS, DEFAULT_COLOR } from "./components/EquipmentSelector";
+import { ResultCard, type CostSortKey } from "./components/ResultCard";
 
 const EQUIPMENT_CATEGORIES: { label: string; typeIds: number[] }[] = [
-  { label: "砲", typeIds: [1, 2, 3, 4] },
+  { label: "小口径", typeIds: [1] },
+  { label: "中口径", typeIds: [2] },
+  { label: "大口径", typeIds: [3] },
+  { label: "副砲", typeIds: [4] },
   { label: "艦戦", typeIds: [6] },
   { label: "艦爆", typeIds: [7] },
   { label: "艦攻", typeIds: [8] },
@@ -28,6 +31,7 @@ export default function App() {
   const [hqLevel, setHqLevel] = useState(120);
   const [candidates, setCandidates] = useState<Candidate[] | null>(null);
   const [calcError, setCalcError] = useState<string | null>(null);
+  const [costSortKey, setCostSortKey] = useState<CostSortKey | null>(null);
 
   useEffect(() => {
     if (!data || selectedIds.length === 0) {
@@ -57,10 +61,27 @@ export default function App() {
     return ids;
   }, [data]);
 
+  // 選択中の装備と同時に開発できない装備は選択ボタンを無効化する
+  const disabledIds = useMemo(() => {
+    if (!data) return new Set<number>();
+    const disabled = new Set<number>();
+    for (const id of developableIds) {
+      if (selectedIds.includes(id)) continue;
+      const combinable = isCombinable([...selectedIds, id], hqLevel, data.equipment, data.overrides, data.devTableData);
+      if (!combinable) disabled.add(id);
+    }
+    return disabled;
+  }, [data, developableIds, selectedIds, hqLevel]);
+
   function toggleEquip(id: number) {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+    setCandidates(null);
+  }
+
+  function clearEquip() {
+    setSelectedIds([]);
     setCandidates(null);
   }
 
@@ -69,34 +90,51 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
 
   const selectedEquip = selectedIds.map((id) => data.equipment.find((e) => e.id === id)!).filter(Boolean);
 
+  const displayedCandidates = costSortKey && candidates
+    ? [...candidates].sort((a, b) => a.result.expectedCost[costSortKey] - b.result.expectedCost[costSortKey])
+    : candidates;
+
   return (
     <div style={{ padding: "2rem", fontFamily: "var(--font-sans)", maxWidth: 1100, margin: "0 auto" }}>
+      <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 1.5rem" }}>開発レシピジェネレータ</h1>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", alignItems: "start" }}>
         <div>
           <EquipmentSelector
             equipment={data.equipment}
             developableIds={developableIds}
             selectedIds={selectedIds}
+            disabledIds={disabledIds}
             categories={EQUIPMENT_CATEGORIES}
             onToggle={toggleEquip}
           />
           <div style={{ marginTop: 16 }}>
-            <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 8px" }}>
+            <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 10 }}>
               対象装備 <span style={{ color: "var(--text-accent)" }}>{selectedIds.length}件</span>
+              {selectedIds.length > 0 && (
+                <button
+                  onClick={clearEquip}
+                  style={{ fontSize: 12, padding: "2px 8px", borderRadius: "var(--radius)", border: "0.5px solid var(--border-strong)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer" }}
+                >
+                  すべて解除
+                </button>
+              )}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16, minHeight: 32 }}>
               {selectedIds.length === 0 ? (
                 <span style={{ fontSize: 14, color: "var(--text-muted)" }}>装備を選択してください</span>
               ) : (
-                selectedEquip.map((eq) => (
-                  <span
-                    key={eq.id}
-                    onClick={() => toggleEquip(eq.id)}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "var(--bg-accent)", color: "var(--text-accent)", fontSize: 14, padding: "4px 10px", borderRadius: "var(--radius)", cursor: "pointer" }}
-                  >
-                    {eq.name} ✕
-                  </span>
-                ))
+                selectedEquip.map((eq) => {
+                  const c = TYPE_COLORS[eq.iconType] ?? DEFAULT_COLOR;
+                  return (
+                    <span
+                      key={eq.id}
+                      onClick={() => toggleEquip(eq.id)}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 5, background: c.bg, color: c.text, fontSize: 14, padding: "4px 10px", borderRadius: "var(--radius)", cursor: "pointer" }}
+                    >
+                      {eq.name} ✕
+                    </span>
+                  );
+                })
               )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -123,14 +161,17 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
               {candidates.length === 0 ? (
                 <p style={{ fontSize: 13, color: "var(--text-muted)" }}>全装備を同時に開発できるレシピはありません。</p>
               ) : (
-                candidates.map((c, i) => (
+                displayedCandidates!.map((c, i) => (
                   <ResultCard
                     key={i}
                     candidate={c}
                     targets={selectedEquip}
                     ships={data.ships}
+                    shipTypes={data.shipTypes}
                     equipment={data.equipment}
                     hqLevel={hqLevel}
+                    sortKey={costSortKey}
+                    onSortChange={(key) => setCostSortKey((prev) => (prev === key ? null : key))}
                   />
                 ))
               )}

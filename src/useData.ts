@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import type { Equipment, Ship, Override, DevTableData } from "./types";
+import type { Equipment, Ship, ShipType, Override, DevTableData } from "./types";
 
 interface AppData {
   equipment: Equipment[];
   ships: Ship[];
+  shipTypes: ShipType[];
   overrides: Override[];
   devTableData: DevTableData;
 }
@@ -16,11 +17,12 @@ export function useData(): { data: AppData | null; error: string | null } {
     Promise.all([
       fetch("/equipment.json").then((r) => r.json()),
       fetch("/ships.json").then((r) => r.json()),
+      fetch("/ship-type.json").then((r) => r.json()),
       fetch("/overrides.json").then((r) => r.json()),
       fetch("/dev-table.json").then((r) => r.json()),
     ])
-      .then(([equipment, ships, overrides, devTableData]) => {
-        setData({ equipment, ships, overrides, devTableData });
+      .then(([equipment, ships, shipTypes, overrides, devTableData]) => {
+        setData({ equipment, ships, shipTypes, overrides, devTableData });
       })
       .catch(() => setError("データの読み込みに失敗しました"));
   }, []);

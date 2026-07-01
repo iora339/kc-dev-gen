@@ -1,15 +1,118 @@
 import { useState } from "react";
-import type { Candidate, Equipment, Ship } from "../types";
+import type { Candidate, Equipment, Ship, ShipType } from "../types";
+
+export type CostSortKey = "fuel" | "ammo" | "steel" | "bauxite" | "devmat";
 
 interface Props {
   candidate: Candidate;
   targets: Equipment[];
   ships: Ship[];
+  shipTypes: ShipType[];
   equipment: Equipment[];
   hqLevel: number;
+  sortKey: CostSortKey | null;
+  onSortChange: (key: CostSortKey) => void;
 }
 
-export function ResultCard({ candidate, targets, ships, equipment, hqLevel }: Props) {
+const TABLE_LABELS: Record<string, string> = { "鋼燃": "鋼材・燃料" };
+
+// afterIdでつながる艦（睦月/睦月改/睦月改二 等）がまとまるように並び替える
+// 最終改造形同士が互いのafterIdを指す（改二乙⇔改二丙のような分岐）データもあるため、
+// 有向チェーンではなく無向グラフの連結成分として艦系列を求める
+function orderByShipFamily(ids: number[], ships: Ship[]): number[] {
+  const shipById = new Map(ships.map((s) => [s.id, s]));
+  const adjacency = new Map<number, number[]>();
+  const afterIdTargets = new Set<number>();
+  for (const s of ships) {
+    if (s.afterId === null || s.afterId === s.id || !shipById.has(s.afterId)) continue;
+    afterIdTargets.add(s.afterId);
+    if (!adjacency.has(s.id)) adjacency.set(s.id, []);
+    if (!adjacency.has(s.afterId)) adjacency.set(s.afterId, []);
+    adjacency.get(s.id)!.push(s.afterId);
+    adjacency.get(s.afterId)!.push(s.id);
+  }
+
+  const rootOfId = new Map<number, number>();
+  const depthOfId = new Map<number, number>();
+  const visitedGlobal = new Set<number>();
+
+  function processComponent(start: number) {
+    const component: number[] = [];
+    const seen = new Set<number>([start]);
+    const queue = [start];
+    while (queue.length > 0) {
+      const cur = queue.shift()!;
+      component.push(cur);
+      for (const next of adjacency.get(cur) ?? []) {
+        if (!seen.has(next)) { seen.add(next); queue.push(next); }
+      }
+    }
+    const root = component.find((n) => !afterIdTargets.has(n)) ?? Math.min(...component);
+
+    const depthSeen = new Set<number>([root]);
+    const depthQueue: Array<[number, number]> = [[root, 0]];
+    while (depthQueue.length > 0) {
+      const [cur, depth] = depthQueue.shift()!;
+      rootOfId.set(cur, root);
+      depthOfId.set(cur, depth);
+      for (const next of adjacency.get(cur) ?? []) {
+        if (!depthSeen.has(next)) { depthSeen.add(next); depthQueue.push([next, depth + 1]); }
+      }
+    }
+    component.forEach((n) => visitedGlobal.add(n));
+  }
+
+  for (const id of ids) {
+    if (!visitedGlobal.has(id)) processComponent(id);
+  }
+
+  const groups = new Map<number, number[]>();
+  for (const id of ids) {
+    const root = rootOfId.get(id) ?? id;
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root)!.push(id);
+  }
+  // 艦種→艦ID(系列の起点)の順にグループを並べ、各グループ内は改修段階順を維持する
+  const sortedRoots = [...groups.keys()].sort((a, b) => {
+    const sa = shipById.get(a);
+    const sb = shipById.get(b);
+    return (sa?.shipType ?? 0) - (sb?.shipType ?? 0) || a - b;
+  });
+  const ordered: number[] = [];
+  for (const root of sortedRoots) {
+    const members = groups.get(root)!;
+    members.sort((a, b) => (depthOfId.get(a) ?? 0) - (depthOfId.get(b) ?? 0));
+    ordered.push(...members);
+  }
+  return ordered;
+}
+
+// 対象の艦種が丸ごと含まれる場合は艦種名にまとめて表示する
+function summarizeShips(ids: number[], ships: Ship[], shipTypes: ShipType[]): string[] {
+  const idSet = new Set(ids);
+  const byType = new Map<number, Ship[]>();
+  for (const s of ships) {
+    if (!byType.has(s.shipType)) byType.set(s.shipType, []);
+    byType.get(s.shipType)!.push(s);
+  }
+  const typeNameById = new Map(shipTypes.map((t) => [t.id, t.name]));
+  const covered = new Set<number>();
+  const names: string[] = [];
+  for (const [type, list] of byType) {
+    if (list.length > 0 && list.every((s) => idSet.has(s.id))) {
+      names.push(typeNameById.get(type) ?? `艦種${type}`);
+      list.forEach((s) => covered.add(s.id));
+    }
+  }
+  const remaining = orderByShipFamily(ids.filter((id) => !covered.has(id)), ships);
+  for (const id of remaining) {
+    const name = ships.find((s) => s.id === id)?.name;
+    if (name) names.push(name);
+  }
+  return names;
+}
+
+export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hqLevel, sortKey, onSortChange }: Props) {
   const [showShips, setShowShips] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [showExcluded, setShowExcluded] = useState(false);
@@ -18,7 +121,7 @@ export function ResultCard({ candidate, targets, ships, equipment, hqLevel }: Pr
   const { expectedCost, failRate, successRate, slotMap } = result;
 
   const shipNames = shipIds.map((id) => ships.find((s) => s.id === id)?.name).filter(Boolean) as string[];
-  const excludedShipNames = excludedShipIds.map((id) => ships.find((s) => s.id === id)?.name).filter(Boolean) as string[];
+  const excludedShipNames = summarizeShips(excludedShipIds, ships, shipTypes);
   const representativeName = label;
   const otherCount = shipNames.length > 1 ? shipNames.length - 1 : 0;
 
@@ -56,14 +159,14 @@ export function ResultCard({ candidate, targets, ships, equipment, hqLevel }: Pr
             )}
           </div>
         )}
-        <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>/ {table}テーブル</span>
-        {excludedShipNames.length > 0 && (
+        <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>/ {TABLE_LABELS[table] ?? table}テーブル</span>
+        {excludedShipIds.length > 0 && (
           <div style={{ position: "relative", marginLeft: "auto" }}>
             <button
               onClick={() => { setShowExcluded((v) => !v); setShowShips(false); setShowDetail(false); }}
               style={{ fontSize: 11, padding: "2px 8px", borderRadius: "var(--radius)", border: "0.5px solid var(--text-warning)", background: "transparent", color: "var(--text-warning)", cursor: "pointer" }}
             >
-              除外艦 {excludedShipNames.length}
+              除外艦 {excludedShipIds.length}
             </button>
             {showExcluded && (
               <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "10px 14px", zIndex: 10, whiteSpace: "nowrap", fontSize: 13, boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
@@ -84,11 +187,11 @@ export function ResultCard({ candidate, targets, ships, equipment, hqLevel }: Pr
           <div style={{ display: "flex", gap: 20, textAlign: "right" }}>
             <div>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 3 }}>対象開発率</div>
-              <div style={{ fontSize: 14, fontWeight: 500 }}>{(successRate * 100).toFixed(1)}%</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-success)" }}>{(successRate * 100).toFixed(1)}%</div>
             </div>
             <div>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 3 }}>開発失敗率</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-warning)" }}>{(failRate * 100).toFixed(1)}%</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-danger)" }}>{(failRate * 100).toFixed(1)}%</div>
             </div>
           </div>
         </div>
@@ -116,7 +219,10 @@ export function ResultCard({ candidate, targets, ships, equipment, hqLevel }: Pr
                   {allSlots.some((x) => !isTarget(x.eq.id)) && (
                     <div style={{ borderTop: "0.5px solid var(--border)", margin: "4px 0" }} />
                   )}
-                  {allSlots.filter((x) => !isTarget(x.eq.id)).map(({ eq, slots }) => (
+                  {allSlots
+                    .filter((x) => !isTarget(x.eq.id))
+                    .sort((a, b) => a.eq.type - b.eq.type || a.eq.id - b.eq.id)
+                    .map(({ eq, slots }) => (
                     <div key={eq.id} style={{ display: "flex", justifyContent: "space-between", gap: 20, color: "var(--text-primary)" }}>
                       <span>{eq.name}</span><span>{(slots / 50 * 100).toFixed(0)}%</span>
                     </div>
@@ -152,8 +258,29 @@ export function ResultCard({ candidate, targets, ships, equipment, hqLevel }: Pr
       </div>
 
       <div style={{ borderTop: "0.5px solid var(--border)", paddingTop: 10, fontSize: 13, color: "var(--text-secondary)" }}>
-        期待消費：燃{expectedCost.fuel.toFixed(0)} 弾{expectedCost.ammo.toFixed(0)} 鋼{expectedCost.steel.toFixed(0)} ボ{expectedCost.bauxite.toFixed(0)}{" "}
-        <span style={{ color: "var(--text-accent)" }}>資材{expectedCost.devmat.toFixed(1)}</span>
+        期待消費：
+        {([
+          ["fuel", "燃", expectedCost.fuel.toFixed(0)],
+          ["ammo", "弾", expectedCost.ammo.toFixed(0)],
+          ["steel", "鋼", expectedCost.steel.toFixed(0)],
+          ["bauxite", "ボ", expectedCost.bauxite.toFixed(0)],
+          ["devmat", "資材", expectedCost.devmat.toFixed(1)],
+        ] as const).map(([key, label, value], i) => (
+          <span
+            key={key}
+            onClick={() => onSortChange(key)}
+            title="クリックでこの項目の昇順に並び替え"
+            style={{
+              cursor: "pointer",
+              color: sortKey === key ? "var(--text-accent)" : "inherit",
+              fontWeight: sortKey === key ? 700 : 400,
+              textDecoration: sortKey === key ? "underline" : "none",
+              marginLeft: i > 0 ? 6 : 0,
+            }}
+          >
+            {label}{value}
+          </span>
+        ))}
       </div>
     </div>
   );
