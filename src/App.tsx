@@ -193,7 +193,8 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
         </div>
       </div>
       <footer style={{ marginTop: "2rem", fontSize: 12, color: "var(--text-muted)" }}>
-        開発確率参考：<a href="https://bbs.nga.cn/read.php?tid=34725123" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>https://bbs.nga.cn/read.php?tid=34725123</a>
+        <p style={{ margin: "0 0 4px" }}>開発確率参考：<a href="https://bbs.nga.cn/read.php?tid=34725123" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>https://bbs.nga.cn/read.php?tid=34725123</a></p>
+        <p style={{ margin: 0 }}>最終更新：2026-7-2</p>
       </footer>
     </div>
   );
