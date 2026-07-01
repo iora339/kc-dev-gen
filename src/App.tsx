@@ -152,12 +152,12 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {calcError && <p style={{ fontSize: 13, color: "var(--text-danger)" }}>{calcError}</p>}
-          {candidates !== null && (
+          {!calcError && (
             <>
               <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
-                結果 <span style={{ color: "var(--text-primary)" }}>{candidates.length}件</span>
+                結果 <span style={{ color: "var(--text-primary)" }}>{candidates?.length ?? 0}件</span>
               </p>
-              {candidates.length === 0 ? (
+              {selectedIds.length === 0 ? null : candidates!.length === 0 ? (
                 <p style={{ fontSize: 13, color: "var(--text-muted)" }}>全装備を同時に開発できるレシピはありません。</p>
               ) : (
                 displayedCandidates!.map((c, i) => (
