@@ -1,0 +1,28 @@
+# 依存関係
+node_modules/
+
+# ビルド成果物
+dist/
+build/
+
+# 環境設定
+.env
+.env.local
+.env.*.local
+
+# エディタ
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS
+.DS_Store
+Thumbs.db
+
+# バックアップファイル
+*.bak
+*_bak*.csv
+* - コピー*
