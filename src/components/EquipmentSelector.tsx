@@ -71,7 +71,7 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
       </div>
       <div style={{
         display: "flex", flexDirection: "column", gap: 10,
-        height: 260, minHeight: 120, maxHeight: "80vh", overflowY: "auto", resize: "vertical",
+        height: 400, minHeight: 120, maxHeight: "80vh", overflowY: "auto", resize: "vertical",
         border: "0.5px solid var(--border)", borderRadius: 12, padding: 14,
       }}>
         {visible.map((cat, i) => (
