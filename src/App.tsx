@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useData } from "./useData";
-import { calcOptimal, isCombinable } from "./calc";
-import type { Candidate } from "./types";
+import { calcOptimal, isCombinable, groupOverridesByKey } from "./calc";
+import type { Candidate, Equipment, Ship } from "./types";
 import { EquipmentSelector } from "./components/EquipmentSelector";
 import { TYPE_COLORS, DEFAULT_COLOR } from "./components/typeColors";
 import { ResultCard, type CostSortKey } from "./components/ResultCard";
@@ -32,10 +32,23 @@ export default function App() {
   const [hqLevel, setHqLevel] = useState(120);
   const [costSortKey, setCostSortKey] = useState<CostSortKey | null>(null);
 
+  const equipmentById = useMemo(
+    () => new Map<number, Equipment>(data?.equipment.map((e) => [e.id, e])),
+    [data]
+  );
+  const shipById = useMemo(
+    () => new Map<number, Ship>(data?.ships.map((s) => [s.id, s])),
+    [data]
+  );
+  const overridesByKey = useMemo(
+    () => groupOverridesByKey(data?.overrides ?? []),
+    [data]
+  );
+
   const calcResult = useMemo(() => {
     if (!data || selectedIds.length === 0) return null;
-    return calcOptimal(selectedIds, hqLevel, data.equipment, data.ships, data.overrides, data.devTableData);
-  }, [selectedIds, hqLevel, data]);
+    return calcOptimal(selectedIds, hqLevel, equipmentById, shipById, overridesByKey, data.devTableData);
+  }, [selectedIds, hqLevel, data, equipmentById, shipById, overridesByKey]);
 
   const candidates: Candidate[] | null = calcResult && !("error" in calcResult) ? calcResult.candidates : null;
   const calcError = calcResult && "error" in calcResult ? calcResult.error : null;
@@ -68,11 +81,11 @@ export default function App() {
     const disabled = new Set<number>();
     for (const id of developableIds) {
       if (selectedIds.includes(id)) continue;
-      const combinable = isCombinable([...selectedIds, id], hqLevel, data.equipment, data.overrides, data.devTableData);
+      const combinable = isCombinable([...selectedIds, id], hqLevel, equipmentById, overridesByKey, data.devTableData);
       if (!combinable) disabled.add(id);
     }
     return disabled;
-  }, [data, developableIds, selectedIds, hqLevel]);
+  }, [data, developableIds, selectedIds, hqLevel, equipmentById, overridesByKey]);
 
   function toggleEquip(id: number) {
     setSelectedIds((prev) =>
@@ -87,7 +100,7 @@ export default function App() {
 if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>{error}</div>;
   if (!data) return <div style={{ padding: "2rem", color: "var(--text-muted)" }}>読み込み中...</div>;
 
-  const selectedEquip = selectedIds.map((id) => data.equipment.find((e) => e.id === id)!).filter(Boolean);
+  const selectedEquip = selectedIds.map((id) => equipmentById.get(id)!).filter(Boolean);
 
   const displayedCandidates = costSortKey && candidates
     ? [...candidates].sort((a, b) => a.result.expectedCost[costSortKey] - b.result.expectedCost[costSortKey])

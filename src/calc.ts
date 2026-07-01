@@ -3,6 +3,18 @@ import type { Equipment, Ship, Override, DevTableData, Resources, SlotMap, CalcR
 const SECRETARY_TYPES = ["砲戦系", "水雷系", "空母系", "潜水系"] as const;
 const TABLES = ["鋼燃", "弾薬", "ボーキ"] as const;
 
+// secretary_tableキーごとに事前グループ化しておくことで、isCombinable/calcOptimal内で
+// overrides配列を毎回フィルタし直す必要がなくなる
+export function groupOverridesByKey(overrides: Override[]): Map<string, Override[]> {
+  const map = new Map<string, Override[]>();
+  for (const o of overrides) {
+    const key = `${o.secretary}_${o.table}`;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(o);
+  }
+  return map;
+}
+
 function adjustForTable(minReq: Resources, table: string): Resources {
   const { fuel } = minReq;
   let { ammo, steel, bauxite } = minReq;
@@ -37,17 +49,12 @@ function buildBaseSlots(
 
 function applyOverrides(
   slotMap: SlotMap,
-  overrides: Override[],
-  secretaryType: string,
-  table: string,
+  relevantOverrides: Override[],
   resources: Resources,
   shipId: number | null
 ): SlotMap {
   const slots = { ...slotMap };
-  const relevant = overrides.filter(
-    (o) => o.secretary === secretaryType && o.table === table
-  );
-  for (const o of relevant) {
+  for (const o of relevantOverrides) {
     if (o.to.id === null) continue;
     let applies: boolean;
     if (o.shipIds.length > 0) {
@@ -149,16 +156,16 @@ function missingTargets(slots: SlotMap, resources: Resources, targets: Equipment
 export function isCombinable(
   targetIds: number[],
   hqLevel: number,
-  equipment: Equipment[],
-  overrides: Override[],
+  equipmentById: Map<number, Equipment>,
+  overridesByKey: Map<string, Override[]>,
   devTableData: DevTableData
 ): boolean {
-  const equipmentById = new Map(equipment.map((e) => [e.id, e]));
   const targets = targetIds.map((id) => equipmentById.get(id)).filter((e): e is Equipment => !!e);
   if (targets.length === 0) return true;
   if (targets.some((eq) => hqLevel < eq.rarity * 10)) return false;
 
-  const relevantOverrideMinReq = overrides
+  const allOverrides = [...overridesByKey.values()].flat();
+  const relevantOverrideMinReq = allOverrides
     .filter((o) => o.shipIds.length === 0 && o.to.id !== null && targets.some((t) => t.id === o.to.id))
     .reduce(
       (acc, o) => ({
@@ -181,17 +188,18 @@ export function isCombinable(
     for (const table of TABLES) {
       const resources = adjustForTable(baseMinReq, table);
       const baseSlots = buildBaseSlots(devTableData, secretaryType, table);
-      const baseModifiedSlots = applyOverrides(baseSlots, overrides, secretaryType, table, resources, null);
+      const relevantOverrides = overridesByKey.get(`${secretaryType}_${table}`) ?? [];
+      const baseModifiedSlots = applyOverrides(baseSlots, relevantOverrides, resources, null);
 
       const missing = missingTargets(baseModifiedSlots, resources, targets);
       if (missing.length === 0) return true;
 
       const missingIds = new Set(missing.map((e) => e.id));
-      const candidateOverrides = overrides.filter(
-        (o) => o.secretary === secretaryType && o.table === table && o.shipIds.length > 0 && o.to.id !== null && missingIds.has(o.to.id)
+      const candidateOverrides = relevantOverrides.filter(
+        (o) => o.shipIds.length > 0 && o.to.id !== null && missingIds.has(o.to.id)
       );
       for (const o of candidateOverrides) {
-        const modified = applyOverrides(baseSlots, overrides, secretaryType, table, resources, o.shipIds[0]);
+        const modified = applyOverrides(baseSlots, relevantOverrides, resources, o.shipIds[0]);
         if (allTargetsAvailable(modified, resources, targets)) return true;
       }
     }
@@ -202,14 +210,11 @@ export function isCombinable(
 export function calcOptimal(
   targetIds: number[],
   hqLevel: number,
-  equipment: Equipment[],
-  ships: Ship[],
-  overrides: Override[],
+  equipmentById: Map<number, Equipment>,
+  shipById: Map<number, Ship>,
+  overridesByKey: Map<string, Override[]>,
   devTableData: DevTableData
 ): { candidates: Candidate[]; baseMinReq: Resources } | { error: string } {
-  const equipmentById = new Map(equipment.map((e) => [e.id, e]));
-  const shipById = new Map(ships.map((s) => [s.id, s]));
-
   const targets = targetIds.map((id) => equipmentById.get(id)).filter((e): e is Equipment => !!e);
   if (targets.length === 0) return { error: "装備が選択されていません" };
 
@@ -219,7 +224,8 @@ export function calcOptimal(
     }
   }
 
-  const relevantOverrideMinReq = overrides
+  const allOverrides = [...overridesByKey.values()].flat();
+  const relevantOverrideMinReq = allOverrides
     .filter((o) => o.shipIds.length === 0 && o.to.id !== null && targets.some((t) => t.id === o.to.id))
     .reduce(
       (acc, o) => ({
@@ -244,51 +250,55 @@ export function calcOptimal(
     for (const table of TABLES) {
       const resources = adjustForTable(baseMinReq, table);
       const baseSlots = buildBaseSlots(devTableData, secretaryType, table);
-      const baseModifiedSlots = applyOverrides(baseSlots, overrides, secretaryType, table, resources, null);
+      const relevantOverrides = overridesByKey.get(`${secretaryType}_${table}`) ?? [];
+      const baseModifiedSlots = applyOverrides(baseSlots, relevantOverrides, resources, null);
 
       const shipIdsWithOverride = [
         ...new Set(
-          overrides
-            .filter((o) => o.secretary === secretaryType && o.table === table && o.shipIds.length > 0)
+          relevantOverrides
+            .filter((o) => o.shipIds.length > 0)
             .flatMap((o) => o.shipIds)
         ),
       ];
 
       const baseResult = calcResult(baseModifiedSlots, resources, targets, equipmentById, hqLevel);
 
-      // overrideにより対象開発率・開発失敗率がbaseより悪化する艦を収集（除外すべき艦）
-      const excludedShipIds = shipIdsWithOverride.filter((shipId) => {
-        if (!baseResult) return false;
-        const modified = applyOverrides(baseSlots, overrides, secretaryType, table, resources, shipId);
+      // 艦ごとのoverride適用結果を1回だけ計算し、除外艦判定・独自候補への昇格判定の両方で使い回す
+      const shipComputations = shipIdsWithOverride.map((shipId) => {
+        const modified = applyOverrides(baseSlots, relevantOverrides, resources, shipId);
         const modResult = calcResult(modified, resources, targets, equipmentById, hqLevel);
-        if (!modResult) return true;
-        return isWorseResult(modResult, baseResult);
+        return { shipId, modified, modResult };
       });
+
+      // overrideにより対象開発率・開発失敗率がbaseより悪化する艦を収集（除外すべき艦）
+      const excludedShipIds = shipComputations
+        .filter(({ modResult }) => {
+          if (!baseResult) return false;
+          if (!modResult) return true;
+          return isWorseResult(modResult, baseResult);
+        })
+        .map(({ shipId }) => shipId);
 
       if (allTargetsAvailable(baseModifiedSlots, resources, targets) && baseResult) {
         candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseResult });
       }
 
-      for (const shipId of shipIdsWithOverride) {
+      for (const { shipId, modified, modResult } of shipComputations) {
         const ship = shipById.get(shipId);
-        if (!ship) continue;
-
-        const modified = applyOverrides(baseSlots, overrides, secretaryType, table, resources, shipId);
+        if (!ship || !modResult) continue;
         if (!allTargetsAvailable(modified, resources, targets)) continue;
 
-        const result = calcResult(modified, resources, targets, equipmentById, hqLevel);
-        if (!result) continue;
-
-        if (!baseResult || isBetterResult(result, baseResult)) {
+        if (!baseResult || isBetterResult(modResult, baseResult)) {
           // 同じスロット構成の艦をグループ化
+          const resultSlotMapJson = JSON.stringify(modResult.slotMap);
           const existing = candidates.find(
-            (c) => c.table === table && c.result.successSlots === result.successSlots &&
-            JSON.stringify(c.result.slotMap) === JSON.stringify(result.slotMap)
+            (c) => c.table === table && c.result.successSlots === modResult.successSlots &&
+            JSON.stringify(c.result.slotMap) === resultSlotMapJson
           );
           if (existing && existing.shipIds.length > 0) {
             existing.shipIds.push(shipId);
           } else {
-            candidates.push({ label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result });
+            candidates.push({ label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult });
           }
         }
       }
