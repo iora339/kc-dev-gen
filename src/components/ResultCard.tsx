@@ -12,6 +12,7 @@ interface Props {
   hqLevel: number;
   sortKey: CostSortKey | null;
   onSortChange: (key: CostSortKey) => void;
+  minCosts: Record<CostSortKey, number> | null;
 }
 
 const TABLE_LABELS: Record<string, string> = { "鋼燃": "鋼材・燃料" };
@@ -112,7 +113,7 @@ function summarizeShips(ids: number[], ships: Ship[], shipTypes: ShipType[]): st
   return names;
 }
 
-export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hqLevel, sortKey, onSortChange }: Props) {
+export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hqLevel, sortKey, onSortChange, minCosts }: Props) {
   const [showShips, setShowShips] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [showExcluded, setShowExcluded] = useState(false);
@@ -260,27 +261,30 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
       <div style={{ borderTop: "0.5px solid var(--border)", paddingTop: 10, fontSize: 13, color: "var(--text-secondary)" }}>
         期待消費：
         {([
-          ["fuel", "燃", expectedCost.fuel.toFixed(0)],
-          ["ammo", "弾", expectedCost.ammo.toFixed(0)],
-          ["steel", "鋼", expectedCost.steel.toFixed(0)],
-          ["bauxite", "ボ", expectedCost.bauxite.toFixed(0)],
-          ["devmat", "資材", expectedCost.devmat.toFixed(1)],
-        ] as const).map(([key, label, value], i) => (
-          <span
-            key={key}
-            onClick={() => onSortChange(key)}
-            title="クリックでこの項目の昇順に並び替え"
-            style={{
-              cursor: "pointer",
-              color: sortKey === key ? "var(--text-accent)" : "inherit",
-              fontWeight: sortKey === key ? 700 : 400,
-              textDecoration: sortKey === key ? "underline" : "none",
-              marginLeft: i > 0 ? 6 : 0,
-            }}
-          >
-            {label}{value}
-          </span>
-        ))}
+          ["fuel", "燃", expectedCost.fuel, expectedCost.fuel.toFixed(0)],
+          ["ammo", "弾", expectedCost.ammo, expectedCost.ammo.toFixed(0)],
+          ["steel", "鋼", expectedCost.steel, expectedCost.steel.toFixed(0)],
+          ["bauxite", "ボ", expectedCost.bauxite, expectedCost.bauxite.toFixed(0)],
+          ["devmat", "資材", expectedCost.devmat, expectedCost.devmat.toFixed(1)],
+        ] as const).map(([key, label, rawValue, text], i) => {
+          const isMin = minCosts !== null && rawValue === minCosts[key];
+          return (
+            <span
+              key={key}
+              onClick={() => onSortChange(key)}
+              title="クリックでこの項目の昇順に並び替え"
+              style={{
+                cursor: "pointer",
+                color: sortKey === key ? "var(--text-accent)" : "inherit",
+                fontWeight: sortKey === key || isMin ? 700 : 400,
+                textDecoration: sortKey === key ? "underline" : "none",
+                marginLeft: i > 0 ? 6 : 0,
+              }}
+            >
+              {label}{text}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

@@ -40,6 +40,16 @@ export default function App() {
   const candidates: Candidate[] | null = calcResult && !("error" in calcResult) ? calcResult.candidates : null;
   const calcError = calcResult && "error" in calcResult ? calcResult.error : null;
 
+  const minCosts = useMemo(() => {
+    if (!candidates || candidates.length === 0) return null;
+    const keys = ["fuel", "ammo", "steel", "bauxite", "devmat"] as const;
+    const result = {} as Record<CostSortKey, number>;
+    for (const key of keys) {
+      result[key] = Math.min(...candidates.map((c) => c.result.expectedCost[key]));
+    }
+    return result;
+  }, [candidates]);
+
   const developableIds = useMemo(() => {
     if (!data) return new Set<number>();
     const ids = new Set<number>();
@@ -161,6 +171,7 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
                     hqLevel={hqLevel}
                     sortKey={costSortKey}
                     onSortChange={(key) => setCostSortKey((prev) => (prev === key ? null : key))}
+                    minCosts={minCosts}
                   />
                 ))
               )}
