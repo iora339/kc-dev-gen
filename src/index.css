@@ -65,3 +65,13 @@ button {
   background: var(--border-strong);
   border-radius: 2px;
 }
+
+.main-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 700px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+}
