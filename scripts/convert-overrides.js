@@ -50,7 +50,7 @@ function resolveEquipName(name) {
   return eq ? eq.id : null;
 }
 
-const raw = readFileSync("csv/overrides.csv", "utf-8");
+const raw = readFileSync("data/overrides.csv", "utf-8");
 const lines = raw.split("\n").slice(1).filter((l) => l.trim());
 
 const result = [];

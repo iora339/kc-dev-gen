@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "fs";
 
 const equipment = JSON.parse(readFileSync("public/equipment.json", "utf-8"));
-const raw = readFileSync("csv/dev-table.csv", "utf-8");
+const raw = readFileSync("data/dev-table.csv", "utf-8");
 
 const lines = raw.split("\n");
 const headers = lines[0].replace(/"/g, "").split(",");
