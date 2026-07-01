@@ -1,8 +1,8 @@
 import { readFileSync, writeFileSync } from "fs";
 
-const ships = JSON.parse(readFileSync("data/ships.json", "utf-8"));
-const shipTypes = JSON.parse(readFileSync("data/ship-type.json", "utf-8"));
-const equipment = JSON.parse(readFileSync("data/equipment.json", "utf-8"));
+const ships = JSON.parse(readFileSync("public/ships.json", "utf-8"));
+const shipTypes = JSON.parse(readFileSync("public/ship-type.json", "utf-8"));
+const equipment = JSON.parse(readFileSync("public/equipment.json", "utf-8"));
 
 // 艦名→IDの解決（「」付きは改造後も含む）
 function resolveShipNames(token) {
@@ -92,5 +92,5 @@ lines.forEach((line) => {
   }
 });
 
-writeFileSync("data/overrides.json", JSON.stringify(result, null, 2), "utf-8");
-console.log(`完了: ${result.length}件を data/overrides.json に出力しました`);
+writeFileSync("public/overrides.json", JSON.stringify(result, null, 2), "utf-8");
+console.log(`完了: ${result.length}件を public/overrides.json に出力しました`);

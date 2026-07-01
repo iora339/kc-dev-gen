@@ -25,16 +25,16 @@ const equipment = items
     },
   }));
 
-writeFileSync("data/equipment.json", JSON.stringify(equipment, null, 2), "utf-8");
-console.log(`完了: ${equipment.length}件の装備データを data/equipment.json に出力しました`);
+writeFileSync("public/equipment.json", JSON.stringify(equipment, null, 2), "utf-8");
+console.log(`完了: ${equipment.length}件の装備データを public/equipment.json に出力しました`);
 
 const equipmentTypes = raw.api_mst_slotitem_equiptype.map((t) => ({
   id: t.api_id,
   name: t.api_name,
 }));
 
-writeFileSync("data/equipment-type.json", JSON.stringify(equipmentTypes, null, 2), "utf-8");
-console.log(`完了: ${equipmentTypes.length}件の種別データを data/equipment-type.json に出力しました`);
+writeFileSync("public/equipment-type.json", JSON.stringify(equipmentTypes, null, 2), "utf-8");
+console.log(`完了: ${equipmentTypes.length}件の種別データを public/equipment-type.json に出力しました`);
 
 const STYPE_CODE = {
   1: "DE", 2: "DD", 3: "CL", 4: "CLT", 5: "CA", 6: "CAV",
@@ -49,8 +49,8 @@ const shipTypes = raw.api_mst_stype.map((s) => ({
   code: STYPE_CODE[s.api_id] ?? "",
 }));
 
-writeFileSync("data/ship-type.json", JSON.stringify(shipTypes, null, 2), "utf-8");
-console.log(`完了: ${shipTypes.length}件の艦種データを data/ship-type.json に出力しました`);
+writeFileSync("public/ship-type.json", JSON.stringify(shipTypes, null, 2), "utf-8");
+console.log(`完了: ${shipTypes.length}件の艦種データを public/ship-type.json に出力しました`);
 
 const SHIP_NAME_OVERRIDES = {
   645: "宗谷(灯台補給船)",
@@ -66,5 +66,5 @@ const ships = raw.api_mst_ship
     afterId: Number(s.api_aftershipid) || null,
   }));
 
-writeFileSync("data/ships.json", JSON.stringify(ships, null, 2), "utf-8");
-console.log(`完了: ${ships.length}件の艦娘データを data/ships.json に出力しました`);
+writeFileSync("public/ships.json", JSON.stringify(ships, null, 2), "utf-8");
+console.log(`完了: ${ships.length}件の艦娘データを public/ships.json に出力しました`);

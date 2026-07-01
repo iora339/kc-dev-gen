@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "fs";
 
-const equipment = JSON.parse(readFileSync("data/equipment.json", "utf-8"));
+const equipment = JSON.parse(readFileSync("public/equipment.json", "utf-8"));
 const raw = readFileSync("csv/dev-table.csv", "utf-8");
 
 const lines = raw.split("\n");
@@ -22,5 +22,5 @@ lines.slice(1).filter((l) => l.trim()).forEach((line) => {
   );
 });
 
-writeFileSync("data/dev-table.json", JSON.stringify(result, null, 2), "utf-8");
-console.log(`完了: ${Object.keys(result).length}件を data/dev-table.json に出力しました`);
+writeFileSync("public/dev-table.json", JSON.stringify(result, null, 2), "utf-8");
+console.log(`完了: ${Object.keys(result).length}件を public/dev-table.json に出力しました`);
