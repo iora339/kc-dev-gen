@@ -12,6 +12,7 @@ export interface Ship {
   name: string;
   shipType: number;
   afterId: number | null;
+  sortId: number;
 }
 
 export interface ShipType {

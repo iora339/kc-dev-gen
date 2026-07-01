@@ -64,6 +64,7 @@ const ships = raw.api_mst_ship
     name: SHIP_NAME_OVERRIDES[s.api_id] ?? s.api_name,
     shipType: s.api_stype,
     afterId: Number(s.api_aftershipid) || null,
+    sortId: s.api_sort_id,
   }));
 
 writeFileSync("public/ships.json", JSON.stringify(ships, null, 2), "utf-8");

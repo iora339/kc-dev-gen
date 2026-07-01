@@ -246,6 +246,14 @@ export function calcOptimal(
 
   const candidates: Candidate[] = [];
 
+  // 改造後艦(誰かのafterId先になっている艦)より改造前艦を優先して処理し、
+  // 同一結果にグループ化される際の代表ラベルが改造前艦になるようにする。
+  // 改造段階が同じ艦同士は、無関係な他のoverrideのshipIds出現順に左右されないよう
+  // sortId(艦歴順)で決定的に順序付けする
+  const afterIdTargets = new Set(
+    [...shipById.values()].map((s) => s.afterId).filter((id): id is number => id !== null)
+  );
+
   for (const secretaryType of SECRETARY_TYPES) {
     for (const table of TABLES) {
       const resources = adjustForTable(baseMinReq, table);
@@ -259,7 +267,13 @@ export function calcOptimal(
             .filter((o) => o.shipIds.length > 0)
             .flatMap((o) => o.shipIds)
         ),
-      ];
+      ].sort((a, b) => {
+        const rootDiff = Number(afterIdTargets.has(a)) - Number(afterIdTargets.has(b));
+        if (rootDiff !== 0) return rootDiff;
+        const sa = shipById.get(a);
+        const sb = shipById.get(b);
+        return (sa?.sortId ?? a) - (sb?.sortId ?? b);
+      });
 
       const baseResult = calcResult(baseModifiedSlots, resources, targets, equipmentById, hqLevel);
 

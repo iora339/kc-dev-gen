@@ -73,11 +73,11 @@ function orderByShipFamily(ids: number[], ships: Ship[]): number[] {
     if (!groups.has(root)) groups.set(root, []);
     groups.get(root)!.push(id);
   }
-  // 艦種→艦ID(系列の起点)の順にグループを並べ、各グループ内は改修段階順を維持する
+  // 艦種→sortId(艦歴順、ゲーム内図鑑順)の順にグループを並べ、各グループ内は改修段階順を維持する
   const sortedRoots = [...groups.keys()].sort((a, b) => {
     const sa = shipById.get(a);
     const sb = shipById.get(b);
-    return (sa?.shipType ?? 0) - (sb?.shipType ?? 0) || a - b;
+    return (sa?.shipType ?? 0) - (sb?.shipType ?? 0) || (sa?.sortId ?? a) - (sb?.sortId ?? b);
   });
   const ordered: number[] = [];
   for (const root of sortedRoots) {
@@ -121,7 +121,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
   const { label, shipIds, excludedShipIds, table, resources, result } = candidate;
   const { expectedCost, failRate, successRate, slotMap } = result;
 
-  const shipNames = shipIds.map((id) => ships.find((s) => s.id === id)?.name).filter(Boolean) as string[];
+  const shipNames = orderByShipFamily(shipIds, ships).map((id) => ships.find((s) => s.id === id)?.name).filter(Boolean) as string[];
   const excludedShipNames = summarizeShips(excludedShipIds, ships, shipTypes);
   const representativeName = label;
   const otherCount = shipNames.length > 1 ? shipNames.length - 1 : 0;
