@@ -4,11 +4,21 @@ const ships = JSON.parse(readFileSync("public/ships.json", "utf-8"));
 const shipTypes = JSON.parse(readFileSync("public/ship-type.json", "utf-8"));
 const equipment = JSON.parse(readFileSync("public/equipment.json", "utf-8"));
 
+const shipsByName = new Map(ships.map((s) => [s.name, s]));
+const shipsById = new Map(ships.map((s) => [s.id, s]));
+const shipTypesByName = new Map(shipTypes.map((t) => [t.name, t]));
+const equipmentByName = new Map(equipment.map((e) => [e.name, e]));
+const shipIdsByType = new Map();
+for (const s of ships) {
+  if (!shipIdsByType.has(s.shipType)) shipIdsByType.set(s.shipType, []);
+  shipIdsByType.get(s.shipType).push(s.id);
+}
+
 // 艦名→IDの解決（「」付きは改造後も含む）
 function resolveShipNames(token) {
   const recursive = token.startsWith("「") && token.endsWith("」");
   const name = recursive ? token.slice(1, -1) : token;
-  const ship = ships.find((s) => s.name === name);
+  const ship = shipsByName.get(name);
   if (!ship) {
     console.warn(`未マッチ艦名: ${name}`);
     return [];
@@ -20,7 +30,7 @@ function resolveShipNames(token) {
   while (cur && !visited.has(cur.id)) {
     visited.add(cur.id);
     ids.push(cur.id);
-    cur = cur.afterId ? ships.find((s) => s.id === cur.afterId) : null;
+    cur = cur.afterId ? shipsById.get(cur.afterId) : null;
   }
   return ids;
 }
@@ -36,16 +46,16 @@ function resolveShipTypeCell(cell) {
   if (!cell) return [];
   const ids = [];
   cell.split("|").forEach((name) => {
-    const st = shipTypes.find((t) => t.name === name.trim());
+    const st = shipTypesByName.get(name.trim());
     if (!st) { console.warn(`未マッチ艦種: ${name}`); return; }
-    ships.filter((s) => s.shipType === st.id).forEach((s) => ids.push(s.id));
+    (shipIdsByType.get(st.id) ?? []).forEach((id) => ids.push(id));
   });
   return ids;
 }
 
 // 装備名→ID
 function resolveEquipName(name) {
-  const eq = equipment.find((e) => e.name === name.trim());
+  const eq = equipmentByName.get(name.trim());
   if (!eq) console.warn(`未マッチ装備: ${name}`);
   return eq ? eq.id : null;
 }
