@@ -1,0 +1,143 @@
+import { useState, useMemo, useEffect } from "react";
+import { useData } from "./useData";
+import { calcOptimal } from "./calc";
+import type { Candidate } from "./types";
+import { EquipmentSelector } from "./components/EquipmentSelector";
+import { ResultCard } from "./components/ResultCard";
+
+const EQUIPMENT_CATEGORIES: { label: string; typeIds: number[] }[] = [
+  { label: "砲", typeIds: [1, 2, 3, 4] },
+  { label: "艦戦", typeIds: [6] },
+  { label: "艦爆", typeIds: [7] },
+  { label: "艦攻", typeIds: [8] },
+  { label: "艦偵", typeIds: [9, 94] },
+  { label: "魚雷", typeIds: [5, 22, 32] },
+  { label: "水上機", typeIds: [10, 11, 41, 45] },
+  { label: "電探", typeIds: [12, 13, 93] },
+  { label: "強化弾", typeIds: [18, 19, 20] },
+  { label: "対潜", typeIds: [14, 15, 40] },
+  { label: "対潜飛行機", typeIds: [25, 26] },
+  { label: "機銃", typeIds: [21] },
+  { label: "陸上機", typeIds: [47, 48, 49, 53] },
+  { label: "その他", typeIds: [] },
+];
+
+export default function App() {
+  const { data, error } = useData();
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [hqLevel, setHqLevel] = useState(120);
+  const [candidates, setCandidates] = useState<Candidate[] | null>(null);
+  const [calcError, setCalcError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!data || selectedIds.length === 0) {
+      setCandidates(null);
+      setCalcError(null);
+      return;
+    }
+    const result = calcOptimal(selectedIds, hqLevel, data.equipment, data.ships, data.overrides, data.devTableData);
+    if ("error" in result) {
+      setCalcError(result.error);
+      setCandidates(null);
+    } else {
+      setCalcError(null);
+      setCandidates(result.candidates);
+    }
+  }, [selectedIds, hqLevel, data]);
+
+  const developableIds = useMemo(() => {
+    if (!data) return new Set<number>();
+    const ids = new Set<number>();
+    for (const [id, tableVals] of Object.entries(data.devTableData)) {
+      if (Object.values(tableVals).some((v) => v > 0)) ids.add(Number(id));
+    }
+    for (const ov of data.overrides) {
+      if (ov.to.id !== null) ids.add(ov.to.id);
+    }
+    return ids;
+  }, [data]);
+
+  function toggleEquip(id: number) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+    setCandidates(null);
+  }
+
+if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>{error}</div>;
+  if (!data) return <div style={{ padding: "2rem", color: "var(--text-muted)" }}>読み込み中...</div>;
+
+  const selectedEquip = selectedIds.map((id) => data.equipment.find((e) => e.id === id)!).filter(Boolean);
+
+  return (
+    <div style={{ padding: "2rem", fontFamily: "var(--font-sans)", maxWidth: 1100, margin: "0 auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", alignItems: "start" }}>
+        <div>
+          <EquipmentSelector
+            equipment={data.equipment}
+            developableIds={developableIds}
+            selectedIds={selectedIds}
+            categories={EQUIPMENT_CATEGORIES}
+            onToggle={toggleEquip}
+          />
+          <div style={{ marginTop: 16 }}>
+            <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 8px" }}>
+              対象装備 <span style={{ color: "var(--text-accent)" }}>{selectedIds.length}件</span>
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16, minHeight: 32 }}>
+              {selectedIds.length === 0 ? (
+                <span style={{ fontSize: 14, color: "var(--text-muted)" }}>装備を選択してください</span>
+              ) : (
+                selectedEquip.map((eq) => (
+                  <span
+                    key={eq.id}
+                    onClick={() => toggleEquip(eq.id)}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "var(--bg-accent)", color: "var(--text-accent)", fontSize: 14, padding: "4px 10px", borderRadius: "var(--radius)", cursor: "pointer" }}
+                  >
+                    {eq.name} ✕
+                  </span>
+                ))
+              )}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <label style={{ fontSize: 14, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>司令部Lv</label>
+              <input
+                type="number"
+                value={hqLevel}
+                min={1}
+                max={120}
+                onChange={(e) => setHqLevel(Number(e.target.value))}
+                style={{ width: 90, fontSize: 15 }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {calcError && <p style={{ fontSize: 13, color: "var(--text-danger)" }}>{calcError}</p>}
+          {candidates !== null && (
+            <>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
+                結果 <span style={{ color: "var(--text-primary)" }}>{candidates.length}件</span>
+              </p>
+              {candidates.length === 0 ? (
+                <p style={{ fontSize: 13, color: "var(--text-muted)" }}>全装備を同時に開発できるレシピはありません。</p>
+              ) : (
+                candidates.map((c, i) => (
+                  <ResultCard
+                    key={i}
+                    candidate={c}
+                    targets={selectedEquip}
+                    ships={data.ships}
+                    equipment={data.equipment}
+                    hqLevel={hqLevel}
+                  />
+                ))
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

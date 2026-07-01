@@ -1,0 +1,66 @@
+:root {
+  --font-sans: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+
+  --bg-base: #ffffff;
+  --surface-1: #f5f5f3;
+  --surface-2: #ffffff;
+
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.2);
+  --border-accent: rgba(80, 130, 220, 0.4);
+
+  --text-primary: #1a1a18;
+  --text-secondary: #555550;
+  --text-muted: #999990;
+  --text-accent: #3b7de8;
+  --text-warning: #c07010;
+  --text-danger: #cc3030;
+
+  --bg-accent: rgba(80, 140, 230, 0.12);
+  --fill-accent: #5088e0;
+
+  --radius: 6px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+input[type="number"] {
+  background: var(--surface-1);
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  outline: none;
+}
+
+input[type="number"]:focus {
+  border-color: var(--border-accent);
+}
+
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 2px;
+}

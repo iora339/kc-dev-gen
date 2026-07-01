@@ -16,6 +16,7 @@ const equipment = items
     name: item.api_name,
     rarity: item.api_rare,
     type: item.api_type[2],
+    iconType: item.api_type[3],
     req: {
       fuel: item.api_broken[0],
       ammo: item.api_broken[1],
