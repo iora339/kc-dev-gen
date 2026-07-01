@@ -3083,5 +3083,1852 @@
       "steel": 0,
       "bauxite": 0
     }
+  },
+  {
+    "id": 69,
+    "shipIds": [],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 168,
+      "slots": 4
+    },
+    "from": [
+      {
+        "id": 21,
+        "slots": 1
+      },
+      {
+        "id": 23,
+        "slots": 1
+      },
+      {
+        "id": 24,
+        "slots": 1
+      },
+      {
+        "id": 25,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 240,
+      "ammo": 260,
+      "steel": 0,
+      "bauxite": 250
+    }
+  },
+  {
+    "id": 70,
+    "shipIds": [],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 168,
+      "slots": 4
+    },
+    "from": [
+      {
+        "id": 21,
+        "slots": 1
+      },
+      {
+        "id": 23,
+        "slots": 1
+      },
+      {
+        "id": 24,
+        "slots": 1
+      },
+      {
+        "id": 25,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 240,
+      "ammo": 260,
+      "steel": 0,
+      "bauxite": 250
+    }
+  },
+  {
+    "id": 71,
+    "shipIds": [
+      88,
+      554
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 207,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 19,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 72,
+    "shipIds": [
+      88,
+      554
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 207,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 19,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 73,
+    "shipIds": [
+      82,
+      553
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 207,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 19,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 74,
+    "shipIds": [
+      515,
+      393
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 242,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 16,
+        "slots": 1
+      },
+      {
+        "id": 23,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 75,
+    "shipIds": [
+      515,
+      393
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 249,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 25,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 76,
+    "shipIds": [
+      515,
+      393
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 242,
+      "slots": 3
+    },
+    "from": [
+      {
+        "id": 16,
+        "slots": 1
+      },
+      {
+        "id": 20,
+        "slots": 1
+      },
+      {
+        "id": 23,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 77,
+    "shipIds": [
+      515,
+      393
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 249,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 21,
+        "slots": 1
+      },
+      {
+        "id": 25,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 78,
+    "shipIds": [
+      491,
+      372
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 194,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 16,
+        "slots": 1
+      },
+      {
+        "id": 18,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 79,
+    "shipIds": [
+      491,
+      372
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 194,
+      "slots": 4
+    },
+    "from": [
+      {
+        "id": 16,
+        "slots": 1
+      },
+      {
+        "id": 20,
+        "slots": 1
+      },
+      {
+        "id": 21,
+        "slots": 1
+      },
+      {
+        "id": 18,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 80,
+    "shipIds": [
+      433,
+      438,
+      545,
+      550,
+      966,
+      735,
+      603,
+      704
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 195,
+      "slots": 3
+    },
+    "from": [
+      {
+        "id": 18,
+        "slots": 1
+      },
+      {
+        "id": 23,
+        "slots": 1
+      },
+      {
+        "id": 26,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 81,
+    "shipIds": [
+      433,
+      438,
+      545,
+      550,
+      966,
+      735,
+      603,
+      704
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 195,
+      "slots": 3
+    },
+    "from": [
+      {
+        "id": 18,
+        "slots": 1
+      },
+      {
+        "id": 23,
+        "slots": 1
+      },
+      {
+        "id": 26,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 82,
+    "shipIds": [
+      433,
+      438,
+      545,
+      550,
+      966,
+      735,
+      603,
+      704
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 197,
+      "slots": 3
+    },
+    "from": [
+      {
+        "id": 19,
+        "slots": 1
+      },
+      {
+        "id": 20,
+        "slots": 2
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 83,
+    "shipIds": [
+      966,
+      735
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 541,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 24,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 84,
+    "shipIds": [
+      966,
+      735
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 542,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 17,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 85,
+    "shipIds": [
+      966,
+      735
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 541,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 24,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 86,
+    "shipIds": [
+      966,
+      735
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 542,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 17,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 87,
+    "shipIds": [
+      90,
+      279,
+      197,
+      91,
+      280,
+      196,
+      1031
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 23,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 25,
+        "slots": 1
+      },
+      {
+        "id": 35,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 88,
+    "shipIds": [
+      90,
+      279,
+      197,
+      91,
+      280,
+      196,
+      1031
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 23,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 25,
+        "slots": 1
+      },
+      {
+        "id": 35,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 89,
+    "shipIds": [
+      153,
+      156
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 24,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 20,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 90,
+    "shipIds": [
+      153,
+      156
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 24,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 20,
+        "slots": 1
+      },
+      {
+        "id": 27,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 91,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "鋼燃",
+    "to": {
+      "id": 68,
+      "slots": 4
+    },
+    "from": [
+      {
+        "id": 41,
+        "slots": 3
+      },
+      {
+        "id": 33,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 92,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "鋼燃",
+    "to": {
+      "id": 37,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 3,
+        "slots": 2
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 93,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "鋼燃",
+    "to": {
+      "id": 38,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 20,
+        "slots": 1
+      },
+      {
+        "id": 21,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 94,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "鋼燃",
+    "to": {
+      "id": 69,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 181,
+        "slots": 1
+      },
+      {
+        "id": 26,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 95,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "鋼燃",
+    "to": {
+      "id": 70,
+      "slots": 4
+    },
+    "from": [
+      {
+        "id": 25,
+        "slots": 3
+      },
+      {
+        "id": 59,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 96,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "鋼燃",
+    "to": {
+      "id": 221,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 34,
+        "slots": 1
+      },
+      {
+        "id": 29,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 97,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "鋼燃",
+    "to": {
+      "id": 445,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 10,
+        "slots": 1
+      },
+      {
+        "id": 39,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 98,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 176,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 57,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 99,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 68,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 41,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 100,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 37,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 3,
+        "slots": 2
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 101,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 38,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 25,
+        "slots": 2
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 102,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 69,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 60,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 103,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 70,
+      "slots": 3
+    },
+    "from": [
+      {
+        "id": 17,
+        "slots": 3
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 104,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 221,
+      "slots": 4
+    },
+    "from": [
+      {
+        "id": 26,
+        "slots": 3
+      },
+      {
+        "id": 52,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 105,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 445,
+      "slots": 3
+    },
+    "from": [
+      {
+        "id": 35,
+        "slots": 2
+      },
+      {
+        "id": 24,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 106,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 346,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 39,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 107,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 176,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 52,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 108,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 37,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 60,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 109,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 38,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 25,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 110,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 69,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 22,
+        "slots": 1
+      },
+      {
+        "id": 55,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 111,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 70,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 24,
+        "slots": 1
+      },
+      {
+        "id": 57,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 112,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 221,
+      "slots": 4
+    },
+    "from": [
+      {
+        "id": 54,
+        "slots": 2
+      },
+      {
+        "id": 35,
+        "slots": 2
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 113,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 445,
+      "slots": 6
+    },
+    "from": [
+      {
+        "id": 26,
+        "slots": 3
+      },
+      {
+        "id": 17,
+        "slots": 3
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 114,
+    "shipIds": [
+      161,
+      166,
+      621,
+      626,
+      943,
+      948,
+      699
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 346,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 61,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 115,
+    "shipIds": [
+      156,
+      461,
+      466,
+      462,
+      467
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 22,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 201,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 116,
+    "shipIds": [
+      432,
+      353
+    ],
+    "secretary": "空母系",
+    "table": "弾薬",
+    "to": {
+      "id": 176,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 26,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 117,
+    "shipIds": [
+      432,
+      353
+    ],
+    "secretary": "空母系",
+    "table": "ボーキ",
+    "to": {
+      "id": 176,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 26,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 118,
+    "shipIds": [
+      299,
+      715,
+      891,
+      897
+    ],
+    "secretary": "潜水系",
+    "table": "鋼燃",
+    "to": {
+      "id": 440,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 41,
+        "slots": 2
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 119,
+    "shipIds": [
+      299,
+      715,
+      891,
+      897
+    ],
+    "secretary": "潜水系",
+    "table": "鋼燃",
+    "to": {
+      "id": 442,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 75,
+        "slots": 2
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 120,
+    "shipIds": [
+      299,
+      715,
+      891,
+      897
+    ],
+    "secretary": "潜水系",
+    "table": "鋼燃",
+    "to": {
+      "id": 511,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 213,
+        "slots": 1
+      },
+      {
+        "id": 457,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 121,
+    "shipIds": [
+      299,
+      715,
+      891,
+      897
+    ],
+    "secretary": "潜水系",
+    "table": "弾薬",
+    "to": {
+      "id": 440,
+      "slots": 4
+    },
+    "from": [
+      {
+        "id": 213,
+        "slots": 3
+      },
+      {
+        "id": 41,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 122,
+    "shipIds": [
+      299,
+      715,
+      891,
+      897
+    ],
+    "secretary": "潜水系",
+    "table": "弾薬",
+    "to": {
+      "id": 442,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 75,
+        "slots": 2
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 123,
+    "shipIds": [
+      299,
+      715,
+      891,
+      897
+    ],
+    "secretary": "潜水系",
+    "table": "弾薬",
+    "to": {
+      "id": 511,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 457,
+        "slots": 2
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 124,
+    "shipIds": [
+      299,
+      715,
+      891,
+      897
+    ],
+    "secretary": "潜水系",
+    "table": "ボーキ",
+    "to": {
+      "id": 440,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 213,
+        "slots": 2
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 125,
+    "shipIds": [
+      299,
+      715,
+      891,
+      897
+    ],
+    "secretary": "潜水系",
+    "table": "ボーキ",
+    "to": {
+      "id": 442,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 457,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 126,
+    "shipIds": [
+      299,
+      715,
+      891,
+      897
+    ],
+    "secretary": "潜水系",
+    "table": "ボーキ",
+    "to": {
+      "id": 511,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 75,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 127,
+    "shipIds": [
+      184,
+      634,
+      635,
+      639,
+      640,
+      944,
+      949
+    ],
+    "secretary": "潜水系",
+    "table": "鋼燃",
+    "to": {
+      "id": 210,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 25,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 128,
+    "shipIds": [
+      184,
+      634,
+      635,
+      639,
+      640,
+      944,
+      949
+    ],
+    "secretary": "潜水系",
+    "table": "弾薬",
+    "to": {
+      "id": 210,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 25,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 129,
+    "shipIds": [
+      184,
+      634,
+      635,
+      639,
+      640,
+      944,
+      949
+    ],
+    "secretary": "潜水系",
+    "table": "ボーキ",
+    "to": {
+      "id": 210,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 25,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    }
   }
 ]
