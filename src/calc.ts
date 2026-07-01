@@ -122,6 +122,15 @@ function calcResult(
   };
 }
 
+// 開発資材消費(devmat)は (1-失敗率)/成功率 で決まるため、対象開発率は高いほど、
+// 開発失敗率は高いほど資材消費が少なく済む（開発失敗時は資材を消費しないため）
+function isBetterResult(a: CalcResult, base: CalcResult): boolean {
+  return a.successSlots > base.successSlots || (a.successSlots === base.successSlots && a.failSlots > base.failSlots);
+}
+function isWorseResult(a: CalcResult, base: CalcResult): boolean {
+  return a.successSlots < base.successSlots || (a.successSlots === base.successSlots && a.failSlots < base.failSlots);
+}
+
 function missingTargets(slots: SlotMap, resources: Resources, targets: Equipment[]): Equipment[] {
   return targets.filter(
     (eq) =>
@@ -247,13 +256,13 @@ export function calcOptimal(
 
       const baseResult = calcResult(baseModifiedSlots, resources, targets, equipmentById, hqLevel);
 
-      // overrideにより対象開発率・開発失敗率がbaseと異なる艦を収集（除外すべき艦）
+      // overrideにより対象開発率・開発失敗率がbaseより悪化する艦を収集（除外すべき艦）
       const excludedShipIds = shipIdsWithOverride.filter((shipId) => {
+        if (!baseResult) return false;
         const modified = applyOverrides(baseSlots, overrides, secretaryType, table, resources, shipId);
         const modResult = calcResult(modified, resources, targets, equipmentById, hqLevel);
-        if (!modResult && !baseResult) return false;
-        if (!modResult || !baseResult) return true;
-        return modResult.successSlots !== baseResult.successSlots || modResult.failSlots !== baseResult.failSlots;
+        if (!modResult) return true;
+        return isWorseResult(modResult, baseResult);
       });
 
       if (allTargetsAvailable(baseModifiedSlots, resources, targets) && baseResult) {
@@ -270,7 +279,7 @@ export function calcOptimal(
         const result = calcResult(modified, resources, targets, equipmentById, hqLevel);
         if (!result) continue;
 
-        if (!baseResult || result.successSlots !== baseResult.successSlots) {
+        if (!baseResult || isBetterResult(result, baseResult)) {
           // 同じスロット構成の艦をグループ化
           const existing = candidates.find(
             (c) => c.table === table && c.result.successSlots === result.successSlots &&
