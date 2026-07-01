@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useData } from "./useData";
 import { calcOptimal, isCombinable } from "./calc";
 import type { Candidate } from "./types";
-import { EquipmentSelector, TYPE_COLORS, DEFAULT_COLOR } from "./components/EquipmentSelector";
+import { EquipmentSelector } from "./components/EquipmentSelector";
+import { TYPE_COLORS, DEFAULT_COLOR } from "./components/typeColors";
 import { ResultCard, type CostSortKey } from "./components/ResultCard";
 
 const EQUIPMENT_CATEGORIES: { label: string; typeIds: number[] }[] = [
@@ -29,25 +30,15 @@ export default function App() {
   const { data, error } = useData();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [hqLevel, setHqLevel] = useState(120);
-  const [candidates, setCandidates] = useState<Candidate[] | null>(null);
-  const [calcError, setCalcError] = useState<string | null>(null);
   const [costSortKey, setCostSortKey] = useState<CostSortKey | null>(null);
 
-  useEffect(() => {
-    if (!data || selectedIds.length === 0) {
-      setCandidates(null);
-      setCalcError(null);
-      return;
-    }
-    const result = calcOptimal(selectedIds, hqLevel, data.equipment, data.ships, data.overrides, data.devTableData);
-    if ("error" in result) {
-      setCalcError(result.error);
-      setCandidates(null);
-    } else {
-      setCalcError(null);
-      setCandidates(result.candidates);
-    }
+  const calcResult = useMemo(() => {
+    if (!data || selectedIds.length === 0) return null;
+    return calcOptimal(selectedIds, hqLevel, data.equipment, data.ships, data.overrides, data.devTableData);
   }, [selectedIds, hqLevel, data]);
+
+  const candidates: Candidate[] | null = calcResult && !("error" in calcResult) ? calcResult.candidates : null;
+  const calcError = calcResult && "error" in calcResult ? calcResult.error : null;
 
   const developableIds = useMemo(() => {
     if (!data) return new Set<number>();
@@ -77,12 +68,10 @@ export default function App() {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
-    setCandidates(null);
   }
 
   function clearEquip() {
     setSelectedIds([]);
-    setCandidates(null);
   }
 
 if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>{error}</div>;

@@ -4,7 +4,8 @@ const SECRETARY_TYPES = ["砲戦系", "水雷系", "空母系", "潜水系"] as 
 const TABLES = ["鋼燃", "弾薬", "ボーキ"] as const;
 
 function adjustForTable(minReq: Resources, table: string): Resources {
-  let { fuel, ammo, steel, bauxite } = minReq;
+  const { fuel } = minReq;
+  let { ammo, steel, bauxite } = minReq;
   if (table === "鋼燃") {
     // max(fuel,steel) >= ammo かつ max(fuel,steel) >= bauxite
     const need = Math.max(ammo, bauxite);
@@ -21,7 +22,6 @@ function adjustForTable(minReq: Resources, table: string): Resources {
 }
 
 function buildBaseSlots(
-  equipmentById: Map<number, Equipment>,
   devTableData: DevTableData,
   secretaryType: string,
   table: string
@@ -49,7 +49,7 @@ function applyOverrides(
   );
   for (const o of relevant) {
     if (o.to.id === null) continue;
-    let applies = false;
+    let applies: boolean;
     if (o.shipIds.length > 0) {
       applies = shipId !== null && o.shipIds.includes(shipId);
     } else {
@@ -171,7 +171,7 @@ export function isCombinable(
   for (const secretaryType of SECRETARY_TYPES) {
     for (const table of TABLES) {
       const resources = adjustForTable(baseMinReq, table);
-      const baseSlots = buildBaseSlots(equipmentById, devTableData, secretaryType, table);
+      const baseSlots = buildBaseSlots(devTableData, secretaryType, table);
       const baseModifiedSlots = applyOverrides(baseSlots, overrides, secretaryType, table, resources, null);
 
       const missing = missingTargets(baseModifiedSlots, resources, targets);
@@ -234,7 +234,7 @@ export function calcOptimal(
   for (const secretaryType of SECRETARY_TYPES) {
     for (const table of TABLES) {
       const resources = adjustForTable(baseMinReq, table);
-      const baseSlots = buildBaseSlots(equipmentById, devTableData, secretaryType, table);
+      const baseSlots = buildBaseSlots(devTableData, secretaryType, table);
       const baseModifiedSlots = applyOverrides(baseSlots, overrides, secretaryType, table, resources, null);
 
       const shipIdsWithOverride = [
