@@ -293,8 +293,7 @@ export function calcOptimal(
         })
         .map(({ shipId }) => shipId);
 
-      const baseViable = baseResult !== null && allTargetsAvailable(baseModifiedSlots, resources, targets);
-      if (baseViable) {
+      if (allTargetsAvailable(baseModifiedSlots, resources, targets) && baseResult) {
         candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseResult });
       }
 
@@ -302,20 +301,19 @@ export function calcOptimal(
         const ship = shipById.get(shipId);
         if (!ship || !modResult) continue;
         if (!allTargetsAvailable(modified, resources, targets)) continue;
-        // baseと同一結果の艦はbase(艦種)カードに含まれるため、個別カードは作らない。
-        // baseより悪化する艦も開発自体は可能なパターンとして表示する（ソートで下位に並ぶ）
-        if (baseViable && !isBetterResult(modResult, baseResult!) && !isWorseResult(modResult, baseResult!)) continue;
 
-        // 同じスロット構成の艦をグループ化
-        const resultSlotMapJson = JSON.stringify(modResult.slotMap);
-        const existing = candidates.find(
-          (c) => c.table === table && c.result.successSlots === modResult.successSlots &&
-          JSON.stringify(c.result.slotMap) === resultSlotMapJson
-        );
-        if (existing && existing.shipIds.length > 0) {
-          existing.shipIds.push(shipId);
-        } else {
-          candidates.push({ label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult });
+        if (!baseResult || isBetterResult(modResult, baseResult)) {
+          // 同じスロット構成の艦をグループ化
+          const resultSlotMapJson = JSON.stringify(modResult.slotMap);
+          const existing = candidates.find(
+            (c) => c.table === table && c.result.successSlots === modResult.successSlots &&
+            JSON.stringify(c.result.slotMap) === resultSlotMapJson
+          );
+          if (existing && existing.shipIds.length > 0) {
+            existing.shipIds.push(shipId);
+          } else {
+            candidates.push({ label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult });
+          }
         }
       }
     }
