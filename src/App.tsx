@@ -107,7 +107,7 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
     : candidates;
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "var(--font-sans)", maxWidth: 1100, margin: "0 auto" }}>
+    <div style={{ padding: "2rem", fontFamily: "var(--font-sans)", maxWidth: 1100, margin: "0 auto", minHeight: "100vh", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
       <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 1.5rem" }}>開発レシピジェネレータ</h1>
       <div className="main-grid" style={{ display: "grid", gap: "2rem", alignItems: "start" }}>
         <div>
@@ -192,8 +192,8 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
           )}
         </div>
       </div>
-      <footer style={{ marginTop: "2rem", fontSize: 12, color: "var(--text-muted)" }}>
-        <p style={{ margin: "0 0 4px" }}>開発確率参考：<a href="https://bbs.nga.cn/read.php?tid=34725123" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>https://bbs.nga.cn/read.php?tid=34725123</a></p>
+      <footer style={{ marginTop: "auto", paddingTop: "2rem", fontSize: 12, color: "var(--text-muted)" }}>
+        <p style={{ margin: "0 0 4px" }}>確率参考サイト：<a href="https://bbs.nga.cn/read.php?tid=34725123" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>https://bbs.nga.cn/read.php?tid=34725123</a></p>
         <p style={{ margin: 0 }}>最終更新：2026-7-2</p>
       </footer>
     </div>
