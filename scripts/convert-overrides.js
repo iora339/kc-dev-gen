@@ -60,46 +60,59 @@ function resolveEquipName(name) {
   return eq ? eq.id : null;
 }
 
-const raw = readFileSync("data/overrides.csv", "utf-8");
-const lines = raw.split("\n").slice(1).filter((l) => l.trim());
-
 const result = [];
-let current = null;
 
-lines.forEach((line) => {
-  const cols = line.split(",");
-  const [shipCell, shipTypeCell, secretary, table, toName, toPct, fromName, fromPct,
-    minFuel, minAmmo, minSteel, minBauxite] = cols;
+// 共通のグループ組み立て。rowはCSVの種別ごとに解釈済みのフィールドを受け取る
+function parseRows(path, interpret) {
+  const lines = readFileSync(path, "utf-8").split("\n").slice(1).filter((l) => l.trim());
+  let current = null;
 
-  const hasTo = toName && toName.trim();
+  lines.forEach((line) => {
+    const { shipCell, shipTypeCell, secretary, table, toName, toPct, fromName, fromPct,
+      minFuel, minAmmo, minSteel, minBauxite } = interpret(line.split(","));
 
-  if (hasTo) {
-    // 新しいグループ開始
-    const shipIds = resolveShipCell(shipCell?.trim());
-    const shipTypeIds = resolveShipTypeCell(shipTypeCell?.trim());
-    const toId = resolveEquipName(toName.trim());
-    const fromId = resolveEquipName(fromName?.trim());
+    const hasTo = toName && toName.trim();
 
-    current = {
-      id: result.length + 1,
-      shipIds: [...new Set([...shipIds, ...shipTypeIds])],
-      secretary: secretary?.trim() || null,
-      table: table?.trim() || null,
-      to: { id: toId, slots: Number(toPct) / 2 },
-      from: fromId ? [{ id: fromId, slots: Number(fromPct) / 2 }] : [],
-      minResources: {
-        fuel: Number(minFuel) || 0,
-        ammo: Number(minAmmo) || 0,
-        steel: Number(minSteel) || 0,
-        bauxite: Number(minBauxite) || 0,
-      },
-    };
-    result.push(current);
-  } else if (current && fromName?.trim()) {
-    // 置換元追加
-    const fromId = resolveEquipName(fromName.trim());
-    if (fromId) current.from.push({ id: fromId, slots: Number(fromPct) / 2 });
-  }
+    if (hasTo) {
+      // 新しいグループ開始
+      const shipIds = resolveShipCell(shipCell?.trim());
+      const shipTypeIds = resolveShipTypeCell(shipTypeCell?.trim());
+      const toId = resolveEquipName(toName.trim());
+      const fromId = resolveEquipName(fromName?.trim());
+
+      current = {
+        id: result.length + 1,
+        shipIds: [...new Set([...shipIds, ...shipTypeIds])],
+        secretary: secretary?.trim() || null,
+        table: table?.trim() || null,
+        to: { id: toId, slots: Number(toPct) / 2 },
+        from: fromId ? [{ id: fromId, slots: Number(fromPct) / 2 }] : [],
+        minResources: {
+          fuel: Number(minFuel) || 0,
+          ammo: Number(minAmmo) || 0,
+          steel: Number(minSteel) || 0,
+          bauxite: Number(minBauxite) || 0,
+        },
+      };
+      result.push(current);
+    } else if (current && fromName?.trim()) {
+      // 置換元追加
+      const fromId = resolveEquipName(fromName.trim());
+      if (fromId) current.from.push({ id: fromId, slots: Number(fromPct) / 2 });
+    }
+  });
+}
+
+// 資源条件を先に読む（同一テーブル内で艦別overrideより先に適用される並びを維持する）
+parseRows("data/overrides-resource.csv", (cols) => {
+  const [minFuel, minAmmo, minSteel, minBauxite,
+    secretary, table, toName, toPct, fromName, fromPct] = cols;
+  return { secretary, table, toName, toPct, fromName, fromPct, minFuel, minAmmo, minSteel, minBauxite };
+});
+
+parseRows("data/overrides-ship.csv", (cols) => {
+  const [shipCell, shipTypeCell, secretary, table, toName, toPct, fromName, fromPct] = cols;
+  return { shipCell, shipTypeCell, secretary, table, toName, toPct, fromName, fromPct };
 });
 
 writeFileSync("public/overrides.json", JSON.stringify(result, null, 2), "utf-8");
