@@ -217,7 +217,7 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
                 </span>
                 {showPendingInfo && (
                   <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "10px 14px", zIndex: 10, width: 380, fontSize: 13, lineHeight: 1.7, color: "var(--text-primary)", boxShadow: "0 2px 8px rgba(0,0,0,0.12)", whiteSpace: "normal" }}>
-                    まだ検証データが不足している状況ですが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data bump</a>のデータを元に暫定の開発率情報を作成しました。チェックすると以下が計算に含まれるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
+                    まだ検証データが不足している状況ですが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>のデータを元に暫定の開発率情報を作成しました。チェックすると以下が計算に含まれるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
                     <table style={{ borderCollapse: "collapse", marginTop: 8, width: "100%", fontSize: 12, lineHeight: 1.5, tableLayout: "fixed" }}>
                       <thead>
                         <tr>
