@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import type { Candidate, Equipment, Ship, ShipType } from "../types";
 
 export type CostSortKey = "fuel" | "ammo" | "steel" | "bauxite" | "devmat";
@@ -241,18 +241,18 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
             )}
           </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto", alignItems: "center", columnGap: 8, rowGap: 7 }}>
           {targets.map((eq) => {
             const slots = slotMap[eq.id] || 0;
             const pct = slots / 50 * 100;
             return (
-              <div key={eq.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 13, color: "var(--text-secondary)", minWidth: 110 }}>{eq.name}</span>
-                <div style={{ flex: 1, height: 5, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
+              <Fragment key={eq.id}>
+                <span style={{ fontSize: 13, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{eq.name}</span>
+                <div style={{ height: 5, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
                   <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", background: "var(--fill-accent)" }} />
                 </div>
                 <span style={{ fontSize: 13, minWidth: 32, textAlign: "right" }}>{pct.toFixed(0)}%</span>
-              </div>
+              </Fragment>
             );
           })}
         </div>
