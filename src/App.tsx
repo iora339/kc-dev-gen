@@ -108,7 +108,7 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
 
   return (
     <div style={{ padding: "2rem", fontFamily: "var(--font-sans)", maxWidth: 1100, margin: "0 auto", minHeight: "100vh", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 1.5rem" }}>開発レシピジェネレータ</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 1.5rem" }}>艦これ　開発レシピ検索</h1>
       <div className="main-grid" style={{ display: "grid", gap: "2rem", alignItems: "start" }}>
         <div>
           <EquipmentSelector
