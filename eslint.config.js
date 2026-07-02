@@ -18,5 +18,9 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // タイトル等のJSXテキスト内の全角スペースを許可する
+      'no-irregular-whitespace': ['error', { skipJSXText: true }],
+    },
   },
 ])
