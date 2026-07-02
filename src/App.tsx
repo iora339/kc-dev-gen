@@ -193,6 +193,7 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
         </div>
       </div>
       <footer style={{ marginTop: "auto", paddingTop: "2rem", fontSize: 12, color: "var(--text-muted)" }}>
+        <p style={{ margin: "0 0 4px" }}>ご意見ご要望はこちらに：<a href="https://marshmallow-qa.com/lmingitwavpu1ou?t=0HNCFk&utm_medium=url_text&utm_source=promotion" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>マシュマロ（匿名メッセージ）</a></p>
         <p style={{ margin: "0 0 4px" }}>確率参考サイト：<a href="https://bbs.nga.cn/read.php?tid=34725123" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>https://bbs.nga.cn/read.php?tid=34725123</a></p>
         <p style={{ margin: 0 }}>最終更新：2026-7-2</p>
       </footer>
