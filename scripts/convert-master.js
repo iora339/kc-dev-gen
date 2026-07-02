@@ -55,6 +55,7 @@ console.log(`完了: ${shipTypes.length}件の艦種データを public/ship-typ
 const SHIP_NAME_OVERRIDES = {
   645: "宗谷(灯台補給船)",
   650: "宗谷(南極観測船)",
+  699: "宗谷(特務艦)",
 };
 
 const ships = raw.api_mst_ship
