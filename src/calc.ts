@@ -297,22 +297,22 @@ export function calcOptimal(
         candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseResult });
       }
 
+      // 同じスロット構成の艦をグループ化する（slotMapのJSON文字列をキーに1回だけ照合）
+      const candidateBySlotJson = new Map<string, Candidate>();
       for (const { shipId, modified, modResult } of shipComputations) {
         const ship = shipById.get(shipId);
         if (!ship || !modResult) continue;
         if (!allTargetsAvailable(modified, resources, targets)) continue;
 
         if (!baseResult || isBetterResult(modResult, baseResult)) {
-          // 同じスロット構成の艦をグループ化
           const resultSlotMapJson = JSON.stringify(modResult.slotMap);
-          const existing = candidates.find(
-            (c) => c.table === table && c.result.successSlots === modResult.successSlots &&
-            JSON.stringify(c.result.slotMap) === resultSlotMapJson
-          );
-          if (existing && existing.shipIds.length > 0) {
+          const existing = candidateBySlotJson.get(resultSlotMapJson);
+          if (existing) {
             existing.shipIds.push(shipId);
           } else {
-            candidates.push({ label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult });
+            const candidate = { label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult };
+            candidates.push(candidate);
+            candidateBySlotJson.set(resultSlotMapJson, candidate);
           }
         }
       }
