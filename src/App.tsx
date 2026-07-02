@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useData } from "./useData";
 import { calcOptimal, isCombinable, groupOverridesByKey } from "./calc";
 import type { Candidate, Equipment, Ship } from "./types";
@@ -31,6 +31,27 @@ export default function App() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [hqLevel, setHqLevel] = useState(120);
   const [costSortKey, setCostSortKey] = useState<CostSortKey | null>(null);
+  const [usePendingData, setUsePendingData] = useState(false);
+  const [showPendingInfo, setShowPendingInfo] = useState(false);
+  const pendingInfoRef = useRef<HTMLSpanElement>(null);
+
+  // 暫定データの説明ポップアップは外側クリックで閉じる
+  useEffect(() => {
+    if (!showPendingInfo) return;
+    const onOutsideClick = (e: MouseEvent) => {
+      if (pendingInfoRef.current && !pendingInfoRef.current.contains(e.target as Node)) {
+        setShowPendingInfo(false);
+      }
+    };
+    document.addEventListener("mousedown", onOutsideClick);
+    return () => document.removeEventListener("mousedown", onOutsideClick);
+  }, [showPendingInfo]);
+
+  // 暫定使用時は確定分の後ろに暫定分を結合する（overrides-pending.jsonは暫定分のみを持つ）
+  const activeOverrides = useMemo(() => {
+    if (!data) return [];
+    return usePendingData ? [...data.overrides, ...data.overridesPending] : data.overrides;
+  }, [data, usePendingData]);
 
   const equipmentById = useMemo(
     () => new Map<number, Equipment>(data?.equipment.map((e) => [e.id, e])),
@@ -40,9 +61,31 @@ export default function App() {
     () => new Map<number, Ship>(data?.ships.map((s) => [s.id, s])),
     [data]
   );
+
+  // 説明ポップアップ用の暫定データ一覧。艦名は未改形態のみ表示する（改装後は自動的に含まれる）
+  const pendingSummary = useMemo(() => {
+    if (!data) return [];
+    const equipName = (id: number) => equipmentById.get(id)?.name ?? "";
+    return data.overridesPending.map((o, i) => {
+      const idSet = new Set(o.shipIds);
+      const rootNames = o.shipIds
+        .filter((id) => !o.shipIds.some((other) => shipById.get(other)?.afterId === id && idSet.has(other)))
+        .map((id) => shipById.get(id)?.name)
+        .filter((name): name is string => !!name);
+      return {
+        key: i,
+        ships: rootNames.join("・"),
+        table: o.table === "鋼燃" ? "鋼・燃" : o.table,
+        rows: [
+          ...(o.to.id !== null ? [{ item: equipName(o.to.id), delta: o.to.slots * 2 }] : []),
+          ...o.from.map((f) => ({ item: equipName(f.id), delta: -f.slots * 2 })),
+        ],
+      };
+    });
+  }, [data, shipById, equipmentById]);
   const overridesByKey = useMemo(
-    () => groupOverridesByKey(data?.overrides ?? []),
-    [data]
+    () => groupOverridesByKey(activeOverrides),
+    [activeOverrides]
   );
 
   const calcResult = useMemo(() => {
@@ -69,11 +112,11 @@ export default function App() {
     for (const [id, tableVals] of Object.entries(data.devTableData)) {
       if (Object.values(tableVals).some((v) => v > 0)) ids.add(Number(id));
     }
-    for (const ov of data.overrides) {
+    for (const ov of activeOverrides) {
       if (ov.to.id !== null) ids.add(ov.to.id);
     }
     return ids;
-  }, [data]);
+  }, [data, activeOverrides]);
 
   // 選択中の装備と同時に開発できない装備は選択ボタンを無効化する
   const disabledIds = useMemo(() => {
@@ -159,6 +202,50 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
                 onChange={(e) => setHqLevel(Number(e.target.value))}
                 style={{ width: 90, fontSize: 15 }}
               />
+              <span ref={pendingInfoRef} style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", position: "relative" }}>
+                <input
+                  type="checkbox"
+                  checked={usePendingData}
+                  onChange={(e) => setUsePendingData(e.target.checked)}
+                  style={{ cursor: "pointer" }}
+                />
+                <span
+                  onClick={() => setShowPendingInfo((v) => !v)}
+                  style={{ fontSize: 14, color: "var(--text-secondary)", cursor: "pointer", textDecoration: "underline dotted" }}
+                >
+                  暫定データを使用
+                </span>
+                {showPendingInfo && (
+                  <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "10px 14px", zIndex: 10, width: 380, fontSize: 13, lineHeight: 1.7, color: "var(--text-primary)", boxShadow: "0 2px 8px rgba(0,0,0,0.12)", whiteSpace: "normal" }}>
+                    まだ検証データが不足している状況ですが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data bump</a>のデータを元に暫定の開発率情報を作成しました。チェックすると以下が計算に含まれるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
+                    <table style={{ borderCollapse: "collapse", marginTop: 8, width: "100%", fontSize: 12, lineHeight: 1.5, tableLayout: "fixed" }}>
+                      <thead>
+                        <tr>
+                          {([["秘書艦", 96], ["テーブル", 48], ["装備", undefined], ["増減", 40]] as const).map(([h, w]) => (
+                            <th key={h} style={{ width: w, textAlign: "left", color: "var(--text-muted)", fontWeight: 400, padding: "2px 6px", borderBottom: "0.5px solid var(--border-strong)" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingSummary.map((g) =>
+                          g.rows.map((r, ri) => (
+                            <tr key={`${g.key}-${ri}`}>
+                              {ri === 0 && (
+                                <td rowSpan={g.rows.length} style={{ padding: "3px 6px", borderBottom: "0.5px solid var(--border)", verticalAlign: "middle", overflowWrap: "break-word" }}>{g.ships}</td>
+                              )}
+                              {ri === 0 && (
+                                <td rowSpan={g.rows.length} style={{ padding: "3px 6px", borderBottom: "0.5px solid var(--border)", verticalAlign: "middle", whiteSpace: "nowrap" }}>{g.table}</td>
+                              )}
+                              <td style={{ padding: "3px 6px", borderBottom: "0.5px solid var(--border)", color: r.delta > 0 ? "var(--text-accent)" : "var(--text-danger)" }}>{r.item}</td>
+                              <td style={{ padding: "3px 6px", borderBottom: "0.5px solid var(--border)", whiteSpace: "nowrap", textAlign: "right", color: r.delta > 0 ? "var(--text-accent)" : "var(--text-danger)" }}>{r.delta > 0 ? `+${r.delta}` : r.delta}%</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </span>
             </div>
           </div>
         </div>

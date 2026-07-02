@@ -60,10 +60,8 @@ function resolveEquipName(name) {
   return eq ? eq.id : null;
 }
 
-const result = [];
-
 // 共通のグループ組み立て。rowはCSVの種別ごとに解釈済みのフィールドを受け取る
-function parseRows(path, interpret) {
+function parseRows(result, path, interpret, provisional = false) {
   const lines = readFileSync(path, "utf-8").split("\n").slice(1).filter((l) => l.trim());
   let current = null;
 
@@ -78,7 +76,7 @@ function parseRows(path, interpret) {
       const shipIds = resolveShipCell(shipCell?.trim());
       const shipTypeIds = resolveShipTypeCell(shipTypeCell?.trim());
       const toId = resolveEquipName(toName.trim());
-      const fromId = resolveEquipName(fromName?.trim());
+      const fromId = fromName?.trim() ? resolveEquipName(fromName.trim()) : null;
 
       current = {
         id: result.length + 1,
@@ -93,6 +91,7 @@ function parseRows(path, interpret) {
           steel: Number(minSteel) || 0,
           bauxite: Number(minBauxite) || 0,
         },
+        ...(provisional ? { provisional: true } : {}),
       };
       result.push(current);
     } else if (current && fromName?.trim()) {
@@ -103,17 +102,26 @@ function parseRows(path, interpret) {
   });
 }
 
-// 資源条件を先に読む（同一テーブル内で艦別overrideより先に適用される並びを維持する）
-parseRows("data/overrides-resource.csv", (cols) => {
+const interpretResource = (cols) => {
   const [minFuel, minAmmo, minSteel, minBauxite,
     secretary, table, toName, toPct, fromName, fromPct] = cols;
   return { secretary, table, toName, toPct, fromName, fromPct, minFuel, minAmmo, minSteel, minBauxite };
-});
+};
 
-parseRows("data/overrides-ship.csv", (cols) => {
+const interpretShip = (cols) => {
   const [shipCell, shipTypeCell, secretary, table, toName, toPct, fromName, fromPct] = cols;
   return { shipCell, shipTypeCell, secretary, table, toName, toPct, fromName, fromPct };
-});
+};
 
-writeFileSync("public/overrides.json", JSON.stringify(result, null, 2), "utf-8");
-console.log(`完了: ${result.length}件を public/overrides.json に出力しました`);
+// 確定分: 資源条件を先に読む（同一テーブル内で艦別overrideより先に適用される並びを維持する）
+const confirmed = [];
+parseRows(confirmed, "data/overrides-resource.csv", interpretResource);
+parseRows(confirmed, "data/overrides-ship.csv", interpretShip);
+writeFileSync("public/overrides.json", JSON.stringify(confirmed, null, 2), "utf-8");
+
+// 暫定分のみ(provisional: true)を出力。クライアント側で確定分の後ろに結合して使う
+const pending = [];
+parseRows(pending, "data/overrides-ship-pending.csv", interpretShip, true);
+writeFileSync("public/overrides-pending.json", JSON.stringify(pending, null, 2), "utf-8");
+
+console.log(`完了: 確定${confirmed.length}件 -> public/overrides.json / 暫定${pending.length}件 -> public/overrides-pending.json`);

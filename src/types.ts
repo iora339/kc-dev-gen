@@ -29,6 +29,7 @@ export interface Override {
   to: { id: number | null; slots: number };
   from: { id: number; slots: number }[];
   minResources: { fuel: number; ammo: number; steel: number; bauxite: number };
+  provisional?: boolean;
 }
 
 export type DevTableData = Record<number, Record<string, number>>;

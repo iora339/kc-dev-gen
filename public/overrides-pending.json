@@ -1,0 +1,200 @@
+[
+  {
+    "id": 1,
+    "shipIds": [
+      421,
+      330,
+      963,
+      422,
+      346,
+      532,
+      537,
+      423,
+      357,
+      968,
+      533,
+      538
+    ],
+    "secretary": "水雷系",
+    "table": "鋼燃",
+    "to": {
+      "id": 3,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 2,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    },
+    "provisional": true
+  },
+  {
+    "id": 2,
+    "shipIds": [
+      421,
+      330,
+      963,
+      422,
+      346,
+      532,
+      537,
+      423,
+      357,
+      968,
+      533,
+      538
+    ],
+    "secretary": "水雷系",
+    "table": "弾薬",
+    "to": {
+      "id": 3,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 44,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    },
+    "provisional": true
+  },
+  {
+    "id": 3,
+    "shipIds": [
+      655,
+      660,
+      595,
+      600,
+      1005,
+      1010,
+      923,
+      928
+    ],
+    "secretary": "砲戦系",
+    "table": "鋼燃",
+    "to": {
+      "id": 356,
+      "slots": 3
+    },
+    "from": [
+      {
+        "id": 1,
+        "slots": 1
+      },
+      {
+        "id": 4,
+        "slots": 2
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    },
+    "provisional": true
+  },
+  {
+    "id": 4,
+    "shipIds": [
+      655,
+      660,
+      595,
+      600,
+      1005,
+      1010,
+      923,
+      928
+    ],
+    "secretary": "砲戦系",
+    "table": "弾薬",
+    "to": {
+      "id": 356,
+      "slots": 2
+    },
+    "from": [
+      {
+        "id": 36,
+        "slots": 1
+      },
+      {
+        "id": 5,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    },
+    "provisional": true
+  },
+  {
+    "id": 5,
+    "shipIds": [
+      965,
+      970
+    ],
+    "secretary": "水雷系",
+    "table": "弾薬",
+    "to": {
+      "id": 536,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 39,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    },
+    "provisional": true
+  },
+  {
+    "id": 6,
+    "shipIds": [
+      589,
+      693,
+      590,
+      691
+    ],
+    "secretary": "水雷系",
+    "table": "弾薬",
+    "to": {
+      "id": 340,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 40,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    },
+    "provisional": true
+  }
+]
