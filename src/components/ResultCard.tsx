@@ -229,7 +229,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
               詳細
             </button>
             {showDetail && (
-              <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "12px 16px", zIndex: 10, minWidth: 220, fontSize: 13, boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
+              <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "12px 16px", zIndex: 10, minWidth: 220, fontSize: 13, boxShadow: "0 2px 8px rgba(0,0,0,0.12)", whiteSpace: "nowrap" }}>
                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>全開発可能装備</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                   {allSlots.filter((x) => isTarget(x.eq.id)).map(({ eq, slots, baseSlots }) => {
