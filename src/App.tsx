@@ -221,7 +221,7 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
                 </span>
                 {showPendingInfo && (
                   <div style={{ position: "absolute", top: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "10px 14px", zIndex: 10, width: 380, fontSize: 13, lineHeight: 1.7, color: "var(--text-primary)", boxShadow: "0 2px 8px rgba(0,0,0,0.12)", whiteSpace: "normal" }}>
-                    まだ検証データが不足している状況ですが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>のデータを元に暫定の開発率情報を作成しました。チェックすると以下が計算に含まれるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
+                    まだ検証データが不足している状況ですが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>のデータ（2026-7-2時点）を元に暫定の開発率情報を作成しました。チェックすると以下が計算に含まれるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
                     <table style={{ borderCollapse: "collapse", marginTop: 8, width: "100%", fontSize: 12, lineHeight: 1.5, tableLayout: "fixed" }}>
                       <thead>
                         <tr>
@@ -286,7 +286,7 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
       <footer style={{ marginTop: "auto", paddingTop: "2rem", fontSize: 12, color: "var(--text-muted)" }}>
         <p style={{ margin: "0 0 4px" }}>ご意見ご要望はこちらに：<a href="https://marshmallow-qa.com/lmingitwavpu1ou?t=0HNCFk&utm_medium=url_text&utm_source=promotion" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>マシュマロ（匿名メッセージ）</a></p>
         <p style={{ margin: "0 0 4px" }}>確率参考サイト：<a href="https://bbs.nga.cn/read.php?tid=34725123" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>https://bbs.nga.cn/read.php?tid=34725123</a></p>
-        <p style={{ margin: 0 }}>最終更新：2026-7-2</p>
+        <p style={{ margin: 0 }}>最終更新：2026-7-3</p>
       </footer>
     </div>
   );
