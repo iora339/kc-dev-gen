@@ -2,6 +2,7 @@ import { Fragment, useState } from "react";
 import type { Candidate, Equipment, Ship, ShipType } from "../types";
 
 export type CostSortKey = "fuel" | "ammo" | "steel" | "bauxite" | "devmat";
+export type SortKey = CostSortKey | "successRate" | "failRate";
 
 interface Props {
   candidate: Candidate;
@@ -10,8 +11,8 @@ interface Props {
   shipTypes: ShipType[];
   equipment: Equipment[];
   hqLevel: number;
-  sortKey: CostSortKey | null;
-  onSortChange: (key: CostSortKey) => void;
+  sortKey: SortKey;
+  onSortChange: (key: SortKey) => void;
   minCosts: Record<CostSortKey, number> | null;
 }
 
@@ -189,11 +190,19 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
           <div style={{ display: "flex", gap: 20, textAlign: "right" }}>
             <div>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 3 }}>対象開発率</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-success)" }}>{(successRate * 100).toFixed(1)}%</div>
+              <div
+                onClick={() => onSortChange("successRate")}
+                title="クリックでこの項目の降順に並び替え"
+                style={{ display: "inline-block", fontSize: 14, fontWeight: sortKey === "successRate" ? 700 : 500, color: "var(--text-success)", cursor: "pointer", textDecoration: sortKey === "successRate" ? "underline" : "none" }}
+              >{(successRate * 100).toFixed(1)}%</div>
             </div>
             <div>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 3 }}>開発失敗率</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-danger)" }}>{(failRate * 100).toFixed(1)}%</div>
+              <div
+                onClick={() => onSortChange("failRate")}
+                title="クリックでこの項目の降順に並び替え"
+                style={{ display: "inline-block", fontSize: 14, fontWeight: sortKey === "failRate" ? 700 : 500, color: "var(--text-danger)", cursor: "pointer", textDecoration: sortKey === "failRate" ? "underline" : "none" }}
+              >{(failRate * 100).toFixed(1)}%</div>
             </div>
           </div>
         </div>
@@ -266,7 +275,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
           ["ammo", "弾", expectedCost.ammo, expectedCost.ammo.toFixed(0)],
           ["steel", "鋼", expectedCost.steel, expectedCost.steel.toFixed(0)],
           ["bauxite", "ボ", expectedCost.bauxite, expectedCost.bauxite.toFixed(0)],
-          ["devmat", "資材", expectedCost.devmat, expectedCost.devmat.toFixed(1)],
+          ["devmat", "資材", expectedCost.devmat, expectedCost.devmat.toFixed(2)],
         ] as const).map(([key, label, rawValue, text], i) => {
           const isMin = minCosts !== null && rawValue === minCosts[key];
           return (

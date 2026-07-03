@@ -4,7 +4,7 @@ import { calcOptimal, isCombinable, groupOverridesByKey } from "./calc";
 import type { Candidate, Equipment, Ship } from "./types";
 import { EquipmentSelector } from "./components/EquipmentSelector";
 import { TYPE_COLORS, DEFAULT_COLOR } from "./components/typeColors";
-import { ResultCard, type CostSortKey } from "./components/ResultCard";
+import { ResultCard, type CostSortKey, type SortKey } from "./components/ResultCard";
 
 const EQUIPMENT_CATEGORIES: { label: string; typeIds: number[] }[] = [
   { label: "小口径", typeIds: [1] },
@@ -30,7 +30,7 @@ export default function App() {
   const { data, error } = useData();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [hqLevel, setHqLevel] = useState(120);
-  const [costSortKey, setCostSortKey] = useState<CostSortKey | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("devmat");
   const [usePendingData, setUsePendingData] = useState(false);
   const [showPendingInfo, setShowPendingInfo] = useState(false);
   const pendingInfoRef = useRef<HTMLSpanElement>(null);
@@ -145,8 +145,12 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
 
   const selectedEquip = selectedIds.map((id) => equipmentById.get(id)!).filter(Boolean);
 
-  const displayedCandidates = costSortKey && candidates
-    ? [...candidates].sort((a, b) => a.result.expectedCost[costSortKey] - b.result.expectedCost[costSortKey])
+  // 開発率系(対象開発率・開発失敗率)は高いほど望ましいため降順、コスト系は昇順で並べる
+  const displayedCandidates = candidates
+    ? [...candidates].sort((a, b) =>
+        sortKey === "successRate" ? b.result.successRate - a.result.successRate
+        : sortKey === "failRate" ? b.result.failRate - a.result.failRate
+        : a.result.expectedCost[sortKey] - b.result.expectedCost[sortKey])
     : candidates;
 
   return (
@@ -269,8 +273,8 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
                     shipTypes={data.shipTypes}
                     equipment={data.equipment}
                     hqLevel={hqLevel}
-                    sortKey={costSortKey}
-                    onSortChange={(key) => setCostSortKey((prev) => (prev === key ? null : key))}
+                    sortKey={sortKey}
+                    onSortChange={(key) => setSortKey((prev) => (prev === key ? "devmat" : key))}
                     minCosts={minCosts}
                   />
                 ))

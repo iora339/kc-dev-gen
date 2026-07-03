@@ -324,6 +324,7 @@ export function calcOptimal(
     c.result.expectedCost.steel + c.result.expectedCost.bauxite;
 
   candidates.sort((a, b) =>
+    a.result.expectedCost.devmat - b.result.expectedCost.devmat ||
     b.result.successRate - a.result.successRate ||
     b.result.failRate - a.result.failRate ||
     totalCost(a) - totalCost(b)
