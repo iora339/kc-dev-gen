@@ -73,11 +73,12 @@ function orderByShipFamily(ids: number[], ships: Ship[]): number[] {
     if (!groups.has(root)) groups.set(root, []);
     groups.get(root)!.push(id);
   }
-  // 艦種→sortId(艦歴順、ゲーム内図鑑順)の順にグループを並べ、各グループ内は改修段階順を維持する
+  // sortId(=api_sortno、ゲーム内図鑑順)でグループを並べる。各グループ内は改修段階順を維持する。
+  // shipType(stype ID)は図鑑順と一致しない（揚陸艦17 < 装甲空母18 等）ため使わない
   const sortedRoots = [...groups.keys()].sort((a, b) => {
     const sa = shipById.get(a);
     const sb = shipById.get(b);
-    return (sa?.shipType ?? 0) - (sb?.shipType ?? 0) || (sa?.sortId ?? a) - (sb?.sortId ?? b);
+    return (sa?.sortId ?? a) - (sb?.sortId ?? b);
   });
   const ordered: number[] = [];
   for (const root of sortedRoots) {
