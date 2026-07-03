@@ -4,9 +4,13 @@ import type { Candidate, Equipment, Ship, ShipType, SlotMap } from "../types";
 export type CostSortKey = "fuel" | "ammo" | "steel" | "bauxite" | "devmat";
 export type SortKey = CostSortKey | "successRate" | "failRate";
 
-// 2つのslotMapに登場する装備IDの和集合を返す（増減比較の対象を漏れなく拾うため）
-function unionSlotIds(a: SlotMap, b: SlotMap): number[] {
-  return [...new Set([...Object.keys(a), ...Object.keys(b)].map(Number))];
+// 複数のslotMapに登場する装備IDの和集合を返す（増減比較の対象を漏れなく拾うため）
+function unionSlotIds(...maps: SlotMap[]): number[] {
+  const ids = new Set<number>();
+  for (const m of maps) {
+    for (const id of Object.keys(m)) ids.add(Number(id));
+  }
+  return [...ids];
 }
 
 // override前後の増減量を%換算し、色（減少=赤・増加=緑・変化なしはdefaultColor）を返す
@@ -110,13 +114,17 @@ function summarizeShipGroups(ids: number[], ships: Ship[], shipTypes: ShipType[]
   }
   const typeNameById = new Map(shipTypes.map((t) => [t.id, t.name]));
   const covered = new Set<number>();
+  // 艦種まとめは先に表示し、艦種内最小sortId（図鑑順）で並べる
   const groups: { label: string; shipIds: number[] }[] = [];
-  for (const [type, list] of byType) {
-    if (list.length > 0 && list.every((s) => idSet.has(s.id))) {
-      groups.push({ label: typeNameById.get(type) ?? `艦種${type}`, shipIds: list.map((s) => s.id) });
-      list.forEach((s) => covered.add(s.id));
-    }
+  const coveredTypes = [...byType.entries()]
+    .filter(([, list]) => list.length > 0 && list.every((s) => idSet.has(s.id)))
+    .map(([type, list]) => ({ type, list, minSortId: Math.min(...list.map((s) => s.sortId)) }))
+    .sort((a, b) => a.minSortId - b.minSortId);
+  for (const { type, list } of coveredTypes) {
+    groups.push({ label: typeNameById.get(type) ?? `艦種${type}`, shipIds: list.map((s) => s.id) });
+    list.forEach((s) => covered.add(s.id));
   }
+  // 個別艦は艦種まとめの後にsortId（図鑑順）で並べる
   const remaining = orderByShipFamily(ids.filter((id) => !covered.has(id)), ships);
   for (const id of remaining) {
     const ship = ships.find((s) => s.id === id);
@@ -182,12 +190,17 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
     return { color: deltaColor(delta, "var(--text-primary)"), text };
   }
 
-  // 除外艦グループの代表艦（同グループ内は同一override適用のため代表1隻でよい）のoverride前後で増減した装備のみ抽出
+  // 除外艦グループ（艦種名でまとめた表示上のグループ）内の全艦で共通する増減のみ抽出する。
+  // 艦種丸ごと除外扱いでも艦ごとに適用されるoverrideが異なる場合があるため、値が揃わない装備は表示しない
   function getExcludedShipChanges(group: { label: string; shipIds: number[] }) {
-    const modified = excludedShipSlotMaps[group.shipIds[0]] || {};
-    return unionSlotIds(modified, baseSlotMap)
-      .map((id) => ({ eq: equipment.find((e) => e.id === id)!, slots: modified[id] || 0, baseSlots: baseSlotMap[id] || 0 }))
-      .filter((x) => x.eq && x.slots !== x.baseSlots && canDevelop(x.eq))
+    const memberSlotMaps = group.shipIds.map((id) => excludedShipSlotMaps[id] || {});
+    return unionSlotIds(baseSlotMap, ...memberSlotMaps)
+      .map((id) => {
+        const slotsValues = memberSlotMaps.map((m) => m[id] || 0);
+        const isCommon = slotsValues.every((v) => v === slotsValues[0]);
+        return { eq: equipment.find((e) => e.id === id)!, slots: slotsValues[0], baseSlots: baseSlotMap[id] || 0, isCommon };
+      })
+      .filter((x) => x.eq && x.isCommon && x.slots !== x.baseSlots && canDevelop(x.eq))
       .sort((a, b) => (b.slots - b.baseSlots) - (a.slots - a.baseSlots));
   }
 
