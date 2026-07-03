@@ -61,4 +61,6 @@ export interface Candidate {
   table: string;
   resources: Resources;
   result: CalcResult;
+  // この艦専用のoverride適用前（他の艦にも共通するoverrideは適用済み）のslotMap。詳細表示での増減差分表示に使う
+  baseSlotMap: SlotMap;
 }

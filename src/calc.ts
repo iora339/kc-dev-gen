@@ -294,7 +294,7 @@ export function calcOptimal(
         .map(({ shipId }) => shipId);
 
       if (allTargetsAvailable(baseModifiedSlots, resources, targets) && baseResult) {
-        candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseResult });
+        candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseResult, baseSlotMap: baseModifiedSlots });
       }
 
       // 同じスロット構成の艦をグループ化する（slotMapのJSON文字列をキーに1回だけ照合）
@@ -310,7 +310,7 @@ export function calcOptimal(
           if (existing) {
             existing.shipIds.push(shipId);
           } else {
-            const candidate = { label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult };
+            const candidate = { label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult, baseSlotMap: baseModifiedSlots };
             candidates.push(candidate);
             candidateBySlotJson.set(resultSlotMapJson, candidate);
           }

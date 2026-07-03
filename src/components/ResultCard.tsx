@@ -120,7 +120,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
   const [showDetail, setShowDetail] = useState(false);
   const [showExcluded, setShowExcluded] = useState(false);
 
-  const { label, shipIds, excludedShipIds, table, resources, result } = candidate;
+  const { label, shipIds, excludedShipIds, table, resources, result, baseSlotMap } = candidate;
   const { expectedCost, failRate, successRate, slotMap } = result;
 
   const shipNames = orderByShipFamily(shipIds, ships).map((id) => ships.find((s) => s.id === id)?.name).filter(Boolean) as string[];
@@ -135,12 +135,22 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
     resources.bauxite >= eq.req.bauxite * 10 &&
     hqLevel >= eq.rarity * 10;
 
-  const allSlots = Object.entries(slotMap)
-    .map(([id, slots]) => ({ eq: equipment.find((e) => e.id === Number(id))!, slots }))
-    .filter((x) => x.eq && x.slots > 0 && canDevelop(x.eq))
+  // overrideによって0%まで下がった装備も表示するため、現在値・override適用前どちらかで枠がある装備を対象にする
+  const allSlots = [...new Set([...Object.keys(slotMap), ...Object.keys(baseSlotMap)].map(Number))]
+    .map((id) => ({ eq: equipment.find((e) => e.id === id)!, slots: slotMap[id] || 0, baseSlots: baseSlotMap[id] || 0 }))
+    .filter((x) => x.eq && (x.slots > 0 || x.baseSlots > 0) && canDevelop(x.eq))
     .sort((a, b) => b.slots - a.slots);
 
   const isTarget = (id: number) => targets.some((t) => t.id === id);
+
+  // override前後の増減を色分け・(+2%)等の表記にして返す（対象装備・その他装備の詳細表示で共用）
+  function formatSlotDelta(slots: number, baseSlots: number, defaultColor: string) {
+    const pct = slots / 50 * 100;
+    const delta = pct - baseSlots / 50 * 100;
+    const color = delta < 0 ? "var(--text-danger)" : delta > 0 ? "var(--text-success)" : defaultColor;
+    const text = `${pct.toFixed(0)}%${delta !== 0 ? `(${delta > 0 ? "+" : ""}${delta.toFixed(0)}%)` : ""}`;
+    return { color, text };
+  }
 
   return (
     <div style={{ background: "var(--surface-2)", border: "0.5px solid var(--border)", borderRadius: 12, padding: "1.25rem 1.5rem", position: "relative" }}>
@@ -222,22 +232,28 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
               <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "12px 16px", zIndex: 10, minWidth: 220, fontSize: 13, boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>全開発可能装備</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                  {allSlots.filter((x) => isTarget(x.eq.id)).map(({ eq, slots }) => (
-                    <div key={eq.id} style={{ display: "flex", justifyContent: "space-between", gap: 20, color: "var(--text-accent)", fontWeight: 500 }}>
-                      <span>{eq.name}</span><span>{(slots / 50 * 100).toFixed(0)}%</span>
-                    </div>
-                  ))}
+                  {allSlots.filter((x) => isTarget(x.eq.id)).map(({ eq, slots, baseSlots }) => {
+                    const { color, text } = formatSlotDelta(slots, baseSlots, "var(--text-accent)");
+                    return (
+                      <div key={eq.id} style={{ display: "flex", justifyContent: "space-between", gap: 20, color, fontWeight: 500 }}>
+                        <span>{eq.name}</span><span>{text}</span>
+                      </div>
+                    );
+                  })}
                   {allSlots.some((x) => !isTarget(x.eq.id)) && (
                     <div style={{ borderTop: "0.5px solid var(--border)", margin: "4px 0" }} />
                   )}
                   {allSlots
                     .filter((x) => !isTarget(x.eq.id))
                     .sort((a, b) => a.eq.type - b.eq.type || a.eq.id - b.eq.id)
-                    .map(({ eq, slots }) => (
-                    <div key={eq.id} style={{ display: "flex", justifyContent: "space-between", gap: 20, color: "var(--text-primary)" }}>
-                      <span>{eq.name}</span><span>{(slots / 50 * 100).toFixed(0)}%</span>
-                    </div>
-                  ))}
+                    .map(({ eq, slots, baseSlots }) => {
+                    const { color, text } = formatSlotDelta(slots, baseSlots, "var(--text-primary)");
+                    return (
+                      <div key={eq.id} style={{ display: "flex", justifyContent: "space-between", gap: 20, color }}>
+                        <span>{eq.name}</span><span>{text}</span>
+                      </div>
+                    );
+                  })}
                   {failRate > 0 && (
                     <>
                       <div style={{ borderTop: "0.5px solid var(--border)", margin: "4px 0" }} />
