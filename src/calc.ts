@@ -285,16 +285,18 @@ export function calcOptimal(
       });
 
       // overrideにより対象開発率・開発失敗率がbaseより悪化する艦を収集（除外すべき艦）
-      const excludedShipIds = shipComputations
-        .filter(({ modResult }) => {
-          if (!baseResult) return false;
-          if (!modResult) return true;
-          return isWorseResult(modResult, baseResult);
-        })
-        .map(({ shipId }) => shipId);
+      const excludedShipComputations = shipComputations.filter(({ modResult }) => {
+        if (!baseResult) return false;
+        if (!modResult) return true;
+        return isWorseResult(modResult, baseResult);
+      });
+      const excludedShipIds = excludedShipComputations.map(({ shipId }) => shipId);
+      const excludedShipSlotMaps = Object.fromEntries(
+        excludedShipComputations.map(({ shipId, modified }) => [shipId, modified])
+      );
 
       if (allTargetsAvailable(baseModifiedSlots, resources, targets) && baseResult) {
-        candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseResult, baseSlotMap: baseModifiedSlots });
+        candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps });
       }
 
       // 同じスロット構成の艦をグループ化する（slotMapのJSON文字列をキーに1回だけ照合）
@@ -310,7 +312,7 @@ export function calcOptimal(
           if (existing) {
             existing.shipIds.push(shipId);
           } else {
-            const candidate = { label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult, baseSlotMap: baseModifiedSlots };
+            const candidate = { label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps: {} };
             candidates.push(candidate);
             candidateBySlotJson.set(resultSlotMapJson, candidate);
           }

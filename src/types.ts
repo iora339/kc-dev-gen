@@ -63,4 +63,6 @@ export interface Candidate {
   result: CalcResult;
   // この艦専用のoverride適用前（他の艦にも共通するoverrideは適用済み）のslotMap。詳細表示での増減差分表示に使う
   baseSlotMap: SlotMap;
+  // excludedShipIds各艦のoverride適用後slotMap。除外艦ポップアップでの増減差分表示に使う
+  excludedShipSlotMaps: Record<number, SlotMap>;
 }

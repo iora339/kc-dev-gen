@@ -1,8 +1,18 @@
-import { Fragment, useState } from "react";
-import type { Candidate, Equipment, Ship, ShipType } from "../types";
+import { Fragment, useEffect, useRef, useState } from "react";
+import type { Candidate, Equipment, Ship, ShipType, SlotMap } from "../types";
 
 export type CostSortKey = "fuel" | "ammo" | "steel" | "bauxite" | "devmat";
 export type SortKey = CostSortKey | "successRate" | "failRate";
+
+// 2つのslotMapに登場する装備IDの和集合を返す（増減比較の対象を漏れなく拾うため）
+function unionSlotIds(a: SlotMap, b: SlotMap): number[] {
+  return [...new Set([...Object.keys(a), ...Object.keys(b)].map(Number))];
+}
+
+// override前後の増減量を%換算し、色（減少=赤・増加=緑・変化なしはdefaultColor）を返す
+function deltaColor(delta: number, defaultColor: string): string {
+  return delta < 0 ? "var(--text-danger)" : delta > 0 ? "var(--text-success)" : defaultColor;
+}
 
 interface Props {
   candidate: Candidate;
@@ -90,8 +100,8 @@ function orderByShipFamily(ids: number[], ships: Ship[]): number[] {
   return ordered;
 }
 
-// 対象の艦種が丸ごと含まれる場合は艦種名にまとめて表示する
-function summarizeShips(ids: number[], ships: Ship[], shipTypes: ShipType[]): string[] {
+// 対象の艦種が丸ごと含まれる場合は艦種名にまとめて表示する（配下の艦IDも保持し、クリック時の詳細表示に使う）
+function summarizeShipGroups(ids: number[], ships: Ship[], shipTypes: ShipType[]): { label: string; shipIds: number[] }[] {
   const idSet = new Set(ids);
   const byType = new Map<number, Ship[]>();
   for (const s of ships) {
@@ -100,31 +110,45 @@ function summarizeShips(ids: number[], ships: Ship[], shipTypes: ShipType[]): st
   }
   const typeNameById = new Map(shipTypes.map((t) => [t.id, t.name]));
   const covered = new Set<number>();
-  const names: string[] = [];
+  const groups: { label: string; shipIds: number[] }[] = [];
   for (const [type, list] of byType) {
     if (list.length > 0 && list.every((s) => idSet.has(s.id))) {
-      names.push(typeNameById.get(type) ?? `艦種${type}`);
+      groups.push({ label: typeNameById.get(type) ?? `艦種${type}`, shipIds: list.map((s) => s.id) });
       list.forEach((s) => covered.add(s.id));
     }
   }
   const remaining = orderByShipFamily(ids.filter((id) => !covered.has(id)), ships);
   for (const id of remaining) {
-    const name = ships.find((s) => s.id === id)?.name;
-    if (name) names.push(name);
+    const ship = ships.find((s) => s.id === id);
+    if (ship) groups.push({ label: ship.name, shipIds: [id] });
   }
-  return names;
+  return groups;
 }
 
 export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hqLevel, sortKey, onSortChange, minCosts }: Props) {
   const [showShips, setShowShips] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [showExcluded, setShowExcluded] = useState(false);
+  const [selectedExcludedGroup, setSelectedExcludedGroup] = useState<{ label: string; shipIds: number[] } | null>(null);
+  const excludedGroupRef = useRef<HTMLDivElement>(null);
 
-  const { label, shipIds, excludedShipIds, table, resources, result, baseSlotMap } = candidate;
+  // 除外艦の「増減する装備」ポップアップは外側クリックで閉じる
+  useEffect(() => {
+    if (!selectedExcludedGroup) return;
+    const onOutsideClick = (e: MouseEvent) => {
+      if (excludedGroupRef.current && !excludedGroupRef.current.contains(e.target as Node)) {
+        setSelectedExcludedGroup(null);
+      }
+    };
+    document.addEventListener("mousedown", onOutsideClick);
+    return () => document.removeEventListener("mousedown", onOutsideClick);
+  }, [selectedExcludedGroup]);
+
+  const { label, shipIds, excludedShipIds, table, resources, result, baseSlotMap, excludedShipSlotMaps } = candidate;
   const { expectedCost, failRate, successRate, slotMap } = result;
 
   const shipNames = orderByShipFamily(shipIds, ships).map((id) => ships.find((s) => s.id === id)?.name).filter(Boolean) as string[];
-  const excludedShipNames = summarizeShips(excludedShipIds, ships, shipTypes);
+  const excludedShipGroups = summarizeShipGroups(excludedShipIds, ships, shipTypes);
   const representativeName = label;
   const otherCount = shipNames.length > 1 ? shipNames.length - 1 : 0;
 
@@ -136,7 +160,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
     hqLevel >= eq.rarity * 10;
 
   // overrideによって0%まで下がった装備も表示するため、現在値・override適用前どちらかで枠がある装備を対象にする
-  const allSlots = [...new Set([...Object.keys(slotMap), ...Object.keys(baseSlotMap)].map(Number))]
+  const allSlots = unionSlotIds(slotMap, baseSlotMap)
     .map((id) => ({ eq: equipment.find((e) => e.id === id)!, slots: slotMap[id] || 0, baseSlots: baseSlotMap[id] || 0 }))
     .filter((x) => x.eq && (x.slots > 0 || x.baseSlots > 0) && canDevelop(x.eq))
     .sort((a, b) => b.slots - a.slots);
@@ -147,9 +171,24 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
   function formatSlotDelta(slots: number, baseSlots: number, defaultColor: string) {
     const pct = slots / 50 * 100;
     const delta = pct - baseSlots / 50 * 100;
-    const color = delta < 0 ? "var(--text-danger)" : delta > 0 ? "var(--text-success)" : defaultColor;
     const text = `${pct.toFixed(0)}%${delta !== 0 ? `(${delta > 0 ? "+" : ""}${delta.toFixed(0)}%)` : ""}`;
-    return { color, text };
+    return { color: deltaColor(delta, defaultColor), text };
+  }
+
+  // 除外艦ポップアップ用に増減量のみ（合計値なし）を色分けして返す
+  function formatSlotDeltaOnly(slots: number, baseSlots: number) {
+    const delta = (slots - baseSlots) / 50 * 100;
+    const text = `${delta > 0 ? "+" : ""}${delta.toFixed(0)}%`;
+    return { color: deltaColor(delta, "var(--text-primary)"), text };
+  }
+
+  // 除外艦グループの代表艦（同グループ内は同一override適用のため代表1隻でよい）のoverride前後で増減した装備のみ抽出
+  function getExcludedShipChanges(group: { label: string; shipIds: number[] }) {
+    const modified = excludedShipSlotMaps[group.shipIds[0]] || {};
+    return unionSlotIds(modified, baseSlotMap)
+      .map((id) => ({ eq: equipment.find((e) => e.id === id)!, slots: modified[id] || 0, baseSlots: baseSlotMap[id] || 0 }))
+      .filter((x) => x.eq && x.slots !== x.baseSlots && canDevelop(x.eq))
+      .sort((a, b) => (b.slots - b.baseSlots) - (a.slots - a.baseSlots));
   }
 
   return (
@@ -176,7 +215,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
         {excludedShipIds.length > 0 && (
           <div style={{ position: "relative", marginLeft: "auto" }}>
             <button
-              onClick={() => { setShowExcluded((v) => !v); setShowShips(false); setShowDetail(false); }}
+              onClick={() => { setShowExcluded((v) => !v); setShowShips(false); setShowDetail(false); setSelectedExcludedGroup(null); }}
               style={{ fontSize: 11, padding: "2px 8px", borderRadius: "var(--radius)", border: "0.5px solid var(--text-warning)", background: "transparent", color: "var(--text-warning)", cursor: "pointer" }}
             >
               除外艦 {excludedShipIds.length}
@@ -184,7 +223,32 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
             {showExcluded && (
               <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "10px 14px", zIndex: 10, whiteSpace: "nowrap", fontSize: 13, boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>旗艦にすべきでない艦</div>
-                {excludedShipNames.map((name) => <div key={name} style={{ lineHeight: 1.8 }}>{name}</div>)}
+                {excludedShipGroups.map((group) => (
+                  <div key={group.label} ref={selectedExcludedGroup?.label === group.label ? excludedGroupRef : undefined} style={{ position: "relative" }}>
+                    <div
+                      onClick={() => setSelectedExcludedGroup((prev) => (prev?.label === group.label ? null : group))}
+                      title="クリックで増減する装備を表示"
+                      style={{ lineHeight: 1.8, cursor: "pointer", textDecoration: "underline dotted", color: selectedExcludedGroup?.label === group.label ? "var(--text-accent)" : "inherit" }}
+                    >
+                      {group.label}
+                    </div>
+                    {selectedExcludedGroup?.label === group.label && (
+                      <div style={{ position: "absolute", top: 0, right: "calc(100% + 8px)", background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "10px 14px", zIndex: 11, whiteSpace: "nowrap", fontSize: 13, boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
+                        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>{group.label} / 増減する装備</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                          {getExcludedShipChanges(group).map(({ eq, slots, baseSlots }) => {
+                            const { color, text } = formatSlotDeltaOnly(slots, baseSlots);
+                            return (
+                              <div key={eq.id} style={{ display: "flex", justifyContent: "space-between", gap: 20, color }}>
+                                <span>{eq.name}</span><span>{text}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
