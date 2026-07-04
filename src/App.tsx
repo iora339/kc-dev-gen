@@ -165,7 +165,7 @@ export default function App() {
 
   return (
     <div style={{ padding: "2rem", fontFamily: "var(--font-sans)", maxWidth: 1100, margin: "0 auto", minHeight: "100vh", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 1.5rem" }}>艦これ　開発レシピ検索</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 1.5rem" }}>艦これ　開発レシピ検索ツール</h1>
       <div className="main-grid" style={{ display: "grid", gap: "2rem", alignItems: "start" }}>
         <div>
           <EquipmentSelector
@@ -302,7 +302,7 @@ export default function App() {
         <p style={{ margin: 0, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
           <a href="https://github.com/iora339/kc-dev-gen" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>GitHub</a>
           <span style={{ color: "var(--text-muted)" }}>/</span>
-          <span>v0.1.1</span>
+          <span>v0.2.0</span>
         </p>
       </footer>
     </div>
