@@ -107,9 +107,8 @@ function applyOverrides(
 }
 
 // 暫定込みと確定のみのスロット構成を比較し、暫定データで表示数値が変わる装備IDを返す
-// （空でなければ⚠バッジ表示対象）。開発可能な装備に限定するのは、暫定overrideが
-// スロット均衡（付け替え先=付け替え元合計）で、開発不可装備間の移動では失敗率が
-// 変わらず表示に出ないため。境界をまたぐ移動は開発可能側が差分に残るので取りこぼさない
+// （空でなければ⚠バッジ対象）。開発可能な装備に限るのは、暫定overrideがスロット均衡で
+// 開発不可装備間の移動は表示に出ないため。境界をまたぐ移動は開発可能側が差分に残る
 function provisionalDiffIds(
   full: SlotMap,
   confirmed: SlotMap,
@@ -191,8 +190,8 @@ function missingTargets(slots: SlotMap, resources: Resources, targets: Equipment
   return targets.filter((eq) => !isTargetAvailable(slots, resources, eq));
 }
 
-// baseでは開発できる選択装備が、この構成では開発不可になるか。合計成功率は同じでも
-// 別の選択装備へ付け替わり狙った装備が出せなくなる艦を除外艦判定で拾うために使う
+// baseでは開発できる選択装備がこの構成で開発不可になるか。合計成功率が同じでも別の選択装備へ
+// 付け替わり狙った装備が出せなくなる艦を除外艦判定で拾う
 function dropsAnyTarget(base: SlotMap, slots: SlotMap, resources: Resources, targets: Equipment[]): boolean {
   return targets.some((eq) => isTargetAvailable(base, resources, eq) && !isTargetAvailable(slots, resources, eq));
 }
@@ -289,7 +288,7 @@ export function calcOptimal(
       const relevantOverrides = overridesByKey.get(`${secretaryType}_${table}`) ?? [];
       const baseModifiedSlots = applyOverrides(baseSlots, relevantOverrides, resources, null);
 
-      // 暫定overrideを含む場合のみ、同じ秘書艦での確定データのみの構成と比較して⚠対象装備を割り出す。
+      // 暫定overrideを含む場合のみ、確定のみの構成と比較して⚠対象装備を割り出す。
       // 暫定が無ければ差分は常に空なので確定計算を省く
       const hasProvisional = relevantOverrides.some((o) => o.provisional);
       const confirmedOverrides = hasProvisional ? relevantOverrides.filter((o) => !o.provisional) : relevantOverrides;
@@ -338,9 +337,9 @@ export function calcOptimal(
         excludedShipComputations.map(({ shipId, provisionalEqIds }) => [shipId, provisionalEqIds])
       );
 
-      // base（艦指定なし）が対象を全て開発できる有効候補ならその結果を昇格判定の基準にする。
-      // 無効（対象不足。例: 艦別overrideでしか出ない装備を含む）なら null とし、
-      // 対象が揃う艦候補を base と同等でも常に採用する（唯一の成立レシピを取りこぼさない）
+      // base（艦指定なし）が対象を全て開発できるなら昇格判定の基準にする。無効（対象不足＝
+      // 艦別overrideでしか出ない装備を含む等）なら null とし、対象が揃う艦候補を base と同等でも
+      // 常に採用する（唯一の成立レシピを取りこぼさない）
       const baseCandidateResult =
         baseResult && allTargetsAvailable(baseModifiedSlots, resources, targets) ? baseResult : null;
       if (baseCandidateResult) {
