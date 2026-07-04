@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import type { Equipment } from "../types";
 import { TYPE_COLORS, DEFAULT_COLOR } from "./typeColors";
 
@@ -23,48 +23,42 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
     });
   }
 
+  // activeCats が空 = 絞り込みなし（「全て」状態）として全カテゴリを表示する
   const allActive = activeCats.size === 0;
 
-  const developable = equipment.filter((e) => developableIds.has(e.id));
-
-  const categorized = categories.map((cat) => {
-    if (cat.typeIds.length === 0) {
-      const otherTypeIds = new Set(categories.flatMap((c) => c.typeIds));
-      return { ...cat, items: developable.filter((e) => !otherTypeIds.has(e.type)).sort((a, b) => a.type - b.type || a.id - b.id) };
-    }
-    return { ...cat, items: developable.filter((e) => cat.typeIds.includes(e.type)).sort((a, b) => a.type - b.type || a.id - b.id) };
-  }).filter((c) => c.items.length > 0);
+  const categorized = useMemo(() => {
+    const developable = equipment.filter((e) => developableIds.has(e.id));
+    // typeIds が空のカテゴリは「その他」: どのカテゴリにも属さない装備の受け皿
+    const knownTypeIds = new Set(categories.flatMap((c) => c.typeIds));
+    return categories
+      .map((cat) => {
+        const matches = cat.typeIds.length === 0
+          ? (e: Equipment) => !knownTypeIds.has(e.type)
+          : (e: Equipment) => cat.typeIds.includes(e.type);
+        return { ...cat, items: developable.filter(matches).sort((a, b) => a.type - b.type || a.id - b.id) };
+      })
+      .filter((c) => c.items.length > 0);
+  }, [equipment, developableIds, categories]);
 
   const visible = allActive ? categorized : categorized.filter((c) => activeCats.has(c.label));
+
+  const tabStyle = (active: boolean): CSSProperties => ({
+    fontSize: 13, padding: "4px 14px", borderRadius: "var(--radius)",
+    border: `0.5px solid ${active ? "var(--border-accent)" : "var(--border-strong)"}`,
+    background: active ? "var(--bg-accent)" : "transparent",
+    color: active ? "var(--text-accent)" : "var(--text-secondary)",
+    cursor: "pointer",
+  });
 
   return (
     <div>
       <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 10px" }}>装備を選択</p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
-        <button
-          onClick={() => setActiveCats(new Set())}
-          style={{
-            fontSize: 13, padding: "4px 14px", borderRadius: "var(--radius)",
-            border: `0.5px solid ${allActive ? "var(--border-accent)" : "var(--border-strong)"}`,
-            background: allActive ? "var(--bg-accent)" : "transparent",
-            color: allActive ? "var(--text-accent)" : "var(--text-secondary)",
-            cursor: "pointer",
-          }}
-        >
+        <button onClick={() => setActiveCats(new Set())} style={tabStyle(allActive)}>
           全て
         </button>
         {categorized.map((cat) => (
-          <button
-            key={cat.label}
-            onClick={() => toggleCat(cat.label)}
-            style={{
-              fontSize: 13, padding: "4px 14px", borderRadius: "var(--radius)",
-              border: `0.5px solid ${activeCats.has(cat.label) ? "var(--border-accent)" : "var(--border-strong)"}`,
-              background: activeCats.has(cat.label) ? "var(--bg-accent)" : "transparent",
-              color: activeCats.has(cat.label) ? "var(--text-accent)" : "var(--text-secondary)",
-              cursor: "pointer",
-            }}
-          >
+          <button key={cat.label} onClick={() => toggleCat(cat.label)} style={tabStyle(activeCats.has(cat.label))}>
             {cat.label}
           </button>
         ))}
@@ -80,6 +74,7 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {cat.items.map((eq) => {
                 const selected = selectedIds.includes(eq.id);
+                // 選択中の装備は同時開発不可でも disable しない（解除操作を塞がないため）
                 const disabled = !selected && disabledIds.has(eq.id);
                 const c = TYPE_COLORS[eq.iconType] ?? DEFAULT_COLOR;
                 return (

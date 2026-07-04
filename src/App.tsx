@@ -5,7 +5,10 @@ import type { Candidate, Equipment, Ship } from "./types";
 import { EquipmentSelector } from "./components/EquipmentSelector";
 import { TYPE_COLORS, DEFAULT_COLOR } from "./components/typeColors";
 import { ResultCard, type CostSortKey, type SortKey } from "./components/ResultCard";
+import { popupStyle } from "./components/popup";
 
+// 装備選択タブの分類。typeIds は master 由来の装備カテゴリID（Equipment.type）。
+// typeIds が空の「その他」は、どのカテゴリにも属さない開発可能装備の受け皿
 const EQUIPMENT_CATEGORIES: { label: string; typeIds: number[] }[] = [
   { label: "小口径", typeIds: [1] },
   { label: "中口径", typeIds: [2] },
@@ -75,7 +78,9 @@ export default function App() {
       return {
         key: i,
         ships: rootNames.join("・"),
+        // 列幅が狭いため表示専用の短縮表記にする（ResultCardの「鋼材・燃料」とは別）
         table: o.table === "鋼燃" ? "鋼・燃" : o.table,
+        // スロット値は%の半分なので、%表示のため×2する
         rows: [
           ...(o.to.id !== null ? [{ item: equipName(o.to.id), delta: o.to.slots * 2 }] : []),
           ...o.from.map((f) => ({ item: equipName(f.id), delta: -f.slots * 2 })),
@@ -96,6 +101,7 @@ export default function App() {
   const candidates: Candidate[] | null = calcResult && !("error" in calcResult) ? calcResult.candidates : null;
   const calcError = calcResult && "error" in calcResult ? calcResult.error : null;
 
+  // コスト項目ごとの全候補中の最小値（ResultCardで該当値を太字強調するのに使う）
   const minCosts = useMemo(() => {
     if (!candidates || candidates.length === 0) return null;
     const keys = ["fuel", "ammo", "steel", "bauxite", "devmat"] as const;
@@ -106,6 +112,7 @@ export default function App() {
     return result;
   }, [candidates]);
 
+  // 開発可能な装備 = 開発テーブルに基礎値がある装備 + overrideの付け替え先になっている装備
   const developableIds = useMemo(() => {
     if (!data) return new Set<number>();
     const ids = new Set<number>();
@@ -140,10 +147,13 @@ export default function App() {
     setSelectedIds([]);
   }
 
-if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>{error}</div>;
+  if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>{error}</div>;
   if (!data) return <div style={{ padding: "2rem", color: "var(--text-muted)" }}>読み込み中...</div>;
 
-  const selectedEquip = selectedIds.map((id) => equipmentById.get(id)!).filter(Boolean);
+  const selectedEquip = selectedIds.flatMap((id) => {
+    const eq = equipmentById.get(id);
+    return eq ? [eq] : [];
+  });
 
   // 開発率系(対象開発率・開発失敗率)は高いほど望ましいため降順、コスト系は昇順で並べる
   const displayedCandidates = candidates
@@ -203,7 +213,8 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
                 value={hqLevel}
                 min={1}
                 max={120}
-                onChange={(e) => setHqLevel(Number(e.target.value))}
+                // 空欄(Number("")=0)や範囲外の直接入力は1〜120に補正する
+                onChange={(e) => setHqLevel(Math.min(120, Math.max(1, Number(e.target.value) || 1)))}
                 style={{ width: 90, fontSize: 15 }}
               />
               <span ref={pendingInfoRef} style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", position: "relative" }}>
@@ -220,7 +231,7 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
                   暫定データを使用
                 </span>
                 {showPendingInfo && (
-                  <div style={{ position: "absolute", top: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "10px 14px", zIndex: 10, width: 380, fontSize: 13, lineHeight: 1.7, color: "var(--text-primary)", boxShadow: "0 2px 8px rgba(0,0,0,0.12)", whiteSpace: "normal" }}>
+                  <div style={popupStyle({ top: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", width: 380, lineHeight: 1.7, color: "var(--text-primary)", whiteSpace: "normal" })}>
                     まだ検証データが不足している状況ですが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>のデータ（2026-7-2時点）を元に暫定の開発率情報を作成しました。チェックすると以下が計算に含まれるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
                     <table style={{ borderCollapse: "collapse", marginTop: 8, width: "100%", fontSize: 12, lineHeight: 1.5, tableLayout: "fixed" }}>
                       <thead>
@@ -266,6 +277,7 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
               ) : (
                 displayedCandidates!.map((c, i) => (
                   <ResultCard
+                    // 選択装備や暫定データの切替時はカードを作り直し、開いていたポップアップ等の内部状態を持ち越さない
                     key={`${selectedIds.join(",")}-${usePendingData}-${i}`}
                     candidate={c}
                     targets={selectedEquip}
@@ -274,6 +286,7 @@ if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>
                     equipment={data.equipment}
                     hqLevel={hqLevel}
                     sortKey={sortKey}
+                    // 同じ項目をもう一度クリックしたら既定の資材ソートに戻す
                     onSortChange={(key) => setSortKey((prev) => (prev === key ? "devmat" : key))}
                     minCosts={minCosts}
                   />

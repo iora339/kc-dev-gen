@@ -1,5 +1,7 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type { Candidate, Equipment, Ship, ShipType, SlotMap } from "../types";
+import { canDevelop } from "../calc";
+import { popupStyle, popupHeadingStyle } from "./popup";
 
 export type CostSortKey = "fuel" | "ammo" | "steel" | "bauxite" | "devmat";
 export type SortKey = CostSortKey | "successRate" | "failRate";
@@ -13,7 +15,7 @@ function unionSlotIds(...maps: SlotMap[]): number[] {
   return [...ids];
 }
 
-// override前後の増減量を%換算し、色（減少=赤・増加=緑・変化なしはdefaultColor）を返す
+// 増減の符号に応じた色を返す（減少=赤・増加=緑・変化なし=defaultColor）
 function deltaColor(delta: number, defaultColor: string): string {
   return delta < 0 ? "var(--text-danger)" : delta > 0 ? "var(--text-success)" : defaultColor;
 }
@@ -30,7 +32,17 @@ interface Props {
   minCosts: Record<CostSortKey, number> | null;
 }
 
+// 表示専用のテーブル名の上書き。ここに無いテーブルはデータ上の名前をそのまま表示する
 const TABLE_LABELS: Record<string, string> = { "鋼燃": "鋼材・燃料" };
+
+// 装備名と値（開発率や増減%）を左右に並べる1行。ポップアップ内の一覧表示で共用する
+function SlotRow({ name, text, color, bold }: { name: string; text: string; color: string; bold?: boolean }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 20, color, fontWeight: bold ? 500 : undefined }}>
+      <span>{name}</span><span>{text}</span>
+    </div>
+  );
+}
 
 // afterIdでつながる艦（睦月/睦月改/睦月改二 等）がまとまるように並び替える
 // 最終改造形同士が互いのafterIdを指す（改二乙⇔改二丙のような分岐）データもあるため、
@@ -155,23 +167,29 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
   const { label, shipIds, excludedShipIds, table, resources, result, baseSlotMap, excludedShipSlotMaps } = candidate;
   const { expectedCost, failRate, successRate, slotMap } = result;
 
-  const shipNames = orderByShipFamily(shipIds, ships).map((id) => ships.find((s) => s.id === id)?.name).filter(Boolean) as string[];
-  const excludedShipGroups = summarizeShipGroups(excludedShipIds, ships, shipTypes);
-  const representativeName = label;
+  const shipById = useMemo(() => new Map(ships.map((s) => [s.id, s])), [ships]);
+  const equipmentById = useMemo(() => new Map(equipment.map((e) => [e.id, e])), [equipment]);
+
+  // 系列グラフ構築を伴うため、ポップアップ開閉等の再レンダーで再計算しないよう useMemo にする
+  const shipNames = useMemo(
+    () => orderByShipFamily(shipIds, ships).map((id) => shipById.get(id)?.name).filter(Boolean) as string[],
+    [shipIds, ships, shipById]
+  );
+  const excludedShipGroups = useMemo(
+    () => summarizeShipGroups(excludedShipIds, ships, shipTypes),
+    [excludedShipIds, ships, shipTypes]
+  );
   const otherCount = shipNames.length > 1 ? shipNames.length - 1 : 0;
 
-  const canDevelop = (eq: Equipment) =>
-    resources.fuel >= eq.req.fuel * 10 &&
-    resources.ammo >= eq.req.ammo * 10 &&
-    resources.steel >= eq.req.steel * 10 &&
-    resources.bauxite >= eq.req.bauxite * 10 &&
-    hqLevel >= eq.rarity * 10;
-
   // overrideによって0%まで下がった装備も表示するため、現在値・override適用前どちらかで枠がある装備を対象にする
-  const allSlots = unionSlotIds(slotMap, baseSlotMap)
-    .map((id) => ({ eq: equipment.find((e) => e.id === id)!, slots: slotMap[id] || 0, baseSlots: baseSlotMap[id] || 0 }))
-    .filter((x) => x.eq && (x.slots > 0 || x.baseSlots > 0) && canDevelop(x.eq))
-    .sort((a, b) => b.slots - a.slots);
+  const allSlots = useMemo(
+    () =>
+      unionSlotIds(slotMap, baseSlotMap)
+        .map((id) => ({ eq: equipmentById.get(id)!, slots: slotMap[id] || 0, baseSlots: baseSlotMap[id] || 0 }))
+        .filter((x) => x.eq && (x.slots > 0 || x.baseSlots > 0) && canDevelop(x.eq, resources, hqLevel))
+        .sort((a, b) => b.slots - a.slots),
+    [slotMap, baseSlotMap, equipmentById, resources, hqLevel]
+  );
 
   const isTarget = (id: number) => targets.some((t) => t.id === id);
 
@@ -198,16 +216,16 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
       .map((id) => {
         const slotsValues = memberSlotMaps.map((m) => m[id] || 0);
         const isCommon = slotsValues.every((v) => v === slotsValues[0]);
-        return { eq: equipment.find((e) => e.id === id)!, slots: slotsValues[0], baseSlots: baseSlotMap[id] || 0, isCommon };
+        return { eq: equipmentById.get(id)!, slots: slotsValues[0], baseSlots: baseSlotMap[id] || 0, isCommon };
       })
-      .filter((x) => x.eq && x.isCommon && x.slots !== x.baseSlots && canDevelop(x.eq))
+      .filter((x) => x.eq && x.isCommon && x.slots !== x.baseSlots && canDevelop(x.eq, resources, hqLevel))
       .sort((a, b) => (b.slots - b.baseSlots) - (a.slots - a.baseSlots));
   }
 
   return (
     <div style={{ background: "var(--surface-2)", border: "0.5px solid var(--border)", borderRadius: 12, padding: "1.25rem 1.5rem", position: "relative" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <span style={{ fontSize: 16, fontWeight: 500 }}>{representativeName}</span>
+        <span style={{ fontSize: 16, fontWeight: 500 }}>{label}</span>
         {otherCount > 0 && (
           <div style={{ position: "relative" }}>
             <button
@@ -217,8 +235,8 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
               他{otherCount}
             </button>
             {showShips && (
-              <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "10px 14px", zIndex: 10, whiteSpace: "nowrap", fontSize: 13, boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>秘書艦候補</div>
+              <div style={popupStyle({ top: "calc(100% + 4px)", left: 0 })}>
+                <div style={popupHeadingStyle}>秘書艦候補</div>
                 {shipNames.map((name) => <div key={name} style={{ lineHeight: 1.8 }}>{name}</div>)}
               </div>
             )}
@@ -234,8 +252,8 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
               除外艦 {excludedShipIds.length}
             </button>
             {showExcluded && (
-              <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "10px 14px", zIndex: 10, whiteSpace: "nowrap", fontSize: 13, boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>旗艦にすべきでない艦</div>
+              <div style={popupStyle({ top: "calc(100% + 4px)", right: 0 })}>
+                <div style={popupHeadingStyle}>旗艦にすべきでない艦</div>
                 {excludedShipGroups.map((group) => (
                   <div key={group.label} ref={selectedExcludedGroup?.label === group.label ? excludedGroupRef : undefined} style={{ position: "relative" }}>
                     <div
@@ -246,16 +264,12 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
                       {group.label}
                     </div>
                     {selectedExcludedGroup?.label === group.label && (
-                      <div style={{ position: "absolute", top: 0, right: "calc(100% + 8px)", background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "10px 14px", zIndex: 11, whiteSpace: "nowrap", fontSize: 13, boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
-                        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>{group.label} / 増減する装備</div>
+                      <div style={popupStyle({ top: 0, right: "calc(100% + 8px)", zIndex: 11 })}>
+                        <div style={popupHeadingStyle}>{group.label} / 増減する装備</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                           {getExcludedShipChanges(group).map(({ eq, slots, baseSlots }) => {
                             const { color, text } = formatSlotDeltaOnly(slots, baseSlots);
-                            return (
-                              <div key={eq.id} style={{ display: "flex", justifyContent: "space-between", gap: 20, color }}>
-                                <span>{eq.name}</span><span>{text}</span>
-                              </div>
-                            );
+                            return <SlotRow key={eq.id} name={eq.name} text={text} color={color} />;
                           })}
                         </div>
                       </div>
@@ -306,16 +320,12 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
               詳細
             </button>
             {showDetail && (
-              <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "var(--surface-2)", border: "0.5px solid var(--border-strong)", borderRadius: "var(--radius)", padding: "12px 16px", zIndex: 10, minWidth: 220, fontSize: 13, boxShadow: "0 2px 8px rgba(0,0,0,0.12)", whiteSpace: "nowrap" }}>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>全開発可能装備</div>
+              <div style={popupStyle({ top: "calc(100% + 4px)", right: 0, padding: "12px 16px", minWidth: 220 })}>
+                <div style={{ ...popupHeadingStyle, marginBottom: 10 }}>全開発可能装備</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                   {allSlots.filter((x) => isTarget(x.eq.id)).map(({ eq, slots, baseSlots }) => {
                     const { color, text } = formatSlotDelta(slots, baseSlots, "var(--text-accent)");
-                    return (
-                      <div key={eq.id} style={{ display: "flex", justifyContent: "space-between", gap: 20, color, fontWeight: 500 }}>
-                        <span>{eq.name}</span><span>{text}</span>
-                      </div>
-                    );
+                    return <SlotRow key={eq.id} name={eq.name} text={text} color={color} bold />;
                   })}
                   {allSlots.some((x) => !isTarget(x.eq.id)) && (
                     <div style={{ borderTop: "0.5px solid var(--border)", margin: "4px 0" }} />
@@ -324,13 +334,9 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
                     .filter((x) => !isTarget(x.eq.id))
                     .sort((a, b) => a.eq.type - b.eq.type || a.eq.id - b.eq.id)
                     .map(({ eq, slots, baseSlots }) => {
-                    const { color, text } = formatSlotDelta(slots, baseSlots, "var(--text-primary)");
-                    return (
-                      <div key={eq.id} style={{ display: "flex", justifyContent: "space-between", gap: 20, color }}>
-                        <span>{eq.name}</span><span>{text}</span>
-                      </div>
-                    );
-                  })}
+                      const { color, text } = formatSlotDelta(slots, baseSlots, "var(--text-primary)");
+                      return <SlotRow key={eq.id} name={eq.name} text={text} color={color} />;
+                    })}
                   {failRate > 0 && (
                     <>
                       <div style={{ borderTop: "0.5px solid var(--border)", margin: "4px 0" }} />
@@ -370,6 +376,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
           ["bauxite", "ボ", expectedCost.bauxite, expectedCost.bauxite.toFixed(0)],
           ["devmat", "資材", expectedCost.devmat, expectedCost.devmat.toFixed(2)],
         ] as const).map(([key, label, rawValue, text], i) => {
+          // 全候補中の最小値は太字で強調する
           const isMin = minCosts !== null && rawValue === minCosts[key];
           return (
             <span

@@ -1,7 +1,4 @@
-import type { Equipment, Ship, Override, DevTableData, Resources, SlotMap, CalcResult, Candidate } from "./types";
-
-const SECRETARY_TYPES = ["砲戦系", "水雷系", "空母系", "潜水系"] as const;
-const TABLES = ["鋼燃", "弾薬", "ボーキ"] as const;
+import { SECRETARY_TYPES, TABLES, type Equipment, type Ship, type Override, type DevTableData, type Resources, type SlotMap, type CalcResult, type Candidate, type SecretaryType, type TableType } from "./types";
 
 // secretary_tableキーごとに事前グループ化しておくことで、isCombinable/calcOptimal内で
 // overrides配列を毎回フィルタし直す必要がなくなる
@@ -15,7 +12,43 @@ export function groupOverridesByKey(overrides: Override[]): Map<string, Override
   return map;
 }
 
-function adjustForTable(minReq: Resources, table: string): Resources {
+// 4資源それぞれの最大値を取る
+function maxResources(a: Resources, b: Resources): Resources {
+  return {
+    fuel: Math.max(a.fuel, b.fuel),
+    ammo: Math.max(a.ammo, b.ammo),
+    steel: Math.max(a.steel, b.steel),
+    bauxite: Math.max(a.bauxite, b.bauxite),
+  };
+}
+
+// resources が min の4資源すべてを満たしているか
+function meetsRequirement(resources: Resources, min: Resources): boolean {
+  return (
+    resources.fuel >= min.fuel &&
+    resources.ammo >= min.ammo &&
+    resources.steel >= min.steel &&
+    resources.bauxite >= min.bauxite
+  );
+}
+
+// 装備の開発に必要な実資源量（Equipment.req は 1/10 値で保持されているため ×10 する）
+function requiredResources(eq: Equipment): Resources {
+  return {
+    fuel: eq.req.fuel * 10,
+    ammo: eq.req.ammo * 10,
+    steel: eq.req.steel * 10,
+    bauxite: eq.req.bauxite * 10,
+  };
+}
+
+// 装備が開発可能か（投入資源が必要量を満たし、司令部Lvが足りている）。UI側の表示判定でも使う
+export function canDevelop(eq: Equipment, resources: Resources, hqLevel: number): boolean {
+  return meetsRequirement(resources, requiredResources(eq)) && hqLevel >= eq.rarity * 10;
+}
+
+// 最低投入資源(minReq)を、指定テーブルが選ばれる投入資源条件を満たすまで最小限引き上げる
+function adjustForTable(minReq: Resources, table: TableType): Resources {
   const { fuel } = minReq;
   let { ammo, steel, bauxite } = minReq;
   if (table === "鋼燃") {
@@ -33,10 +66,11 @@ function adjustForTable(minReq: Resources, table: string): Resources {
   return { fuel, ammo, steel, bauxite };
 }
 
+// 秘書艦種×テーブルの基礎開発率(%)を ÷2 してスロット数マップに変換する
 function buildBaseSlots(
   devTableData: DevTableData,
-  secretaryType: string,
-  table: string
+  secretaryType: SecretaryType,
+  table: TableType
 ): SlotMap {
   const key = `${secretaryType}_${table}`;
   const slotMap: SlotMap = {};
@@ -47,6 +81,8 @@ function buildBaseSlots(
   return slotMap;
 }
 
+// スロット構成にoverride（開発率の付け替え）を適用する。
+// shipId が null の場合は艦別overrideを発動させず、資源条件のみのoverrideだけを適用する
 function applyOverrides(
   slotMap: SlotMap,
   relevantOverrides: Override[],
@@ -56,17 +92,12 @@ function applyOverrides(
   const slots = { ...slotMap };
   for (const o of relevantOverrides) {
     if (o.to.id === null) continue;
-    let applies: boolean;
-    if (o.shipIds.length > 0) {
-      applies = shipId !== null && o.shipIds.includes(shipId);
-    } else {
-      applies =
-        resources.fuel >= o.minResources.fuel &&
-        resources.ammo >= o.minResources.ammo &&
-        resources.steel >= o.minResources.steel &&
-        resources.bauxite >= o.minResources.bauxite;
-    }
+    const applies =
+      o.shipIds.length > 0
+        ? shipId !== null && o.shipIds.includes(shipId)
+        : meetsRequirement(resources, o.minResources);
     if (!applies) continue;
+    // 付け替え元がこのテーブルに存在しない場合は減算をスキップする（付け替え先の加算は常に行う）
     for (const f of o.from) {
       if (slots[f.id] != null) slots[f.id] = Math.max(0, slots[f.id] - f.slots);
     }
@@ -75,21 +106,21 @@ function applyOverrides(
   return slots;
 }
 
+// 対象装備1件が現在のスロット構成・投入資源で開発可能か
+function isTargetAvailable(slots: SlotMap, resources: Resources, eq: Equipment): boolean {
+  return (slots[eq.id] || 0) > 0 && meetsRequirement(resources, requiredResources(eq));
+}
+
 function allTargetsAvailable(
   slots: SlotMap,
   resources: Resources,
   targets: Equipment[]
 ): boolean {
-  return targets.every(
-    (eq) =>
-      (slots[eq.id] || 0) > 0 &&
-      resources.fuel >= eq.req.fuel * 10 &&
-      resources.ammo >= eq.req.ammo * 10 &&
-      resources.steel >= eq.req.steel * 10 &&
-      resources.bauxite >= eq.req.bauxite * 10
-  );
+  return targets.every((eq) => isTargetAvailable(slots, resources, eq));
 }
 
+// スロット構成と投入資源から対象開発率・開発失敗率・期待消費資源を算出する。
+// 対象装備のスロットが1つも無い構成は候補になり得ないため null を返す
 function calcResult(
   slots: SlotMap,
   resources: Resources,
@@ -101,16 +132,11 @@ function calcResult(
   const successRate = successSlots / 50;
   if (successRate === 0) return null;
 
+  // 資源不足または司令部Lv不足の装備を引くと開発失敗になる（そのスロット分が失敗率）
   const failSlots = Object.entries(slots).reduce((sum, [eqId, slotCount]) => {
     const eq = equipmentById.get(Number(eqId));
     if (!eq) return sum;
-    const fails =
-      resources.fuel < eq.req.fuel * 10 ||
-      resources.ammo < eq.req.ammo * 10 ||
-      resources.steel < eq.req.steel * 10 ||
-      resources.bauxite < eq.req.bauxite * 10 ||
-      hqLevel < eq.rarity * 10;
-    return sum + (fails ? slotCount : 0);
+    return sum + (canDevelop(eq, resources, hqLevel) ? 0 : slotCount);
   }, 0);
 
   return {
@@ -123,6 +149,7 @@ function calcResult(
       ammo: resources.ammo / successRate,
       steel: resources.steel / successRate,
       bauxite: resources.bauxite / successRate,
+      // 開発失敗時は資材を消費しないため、消費が発生する試行の割合(1-失敗率)を成功率で割る
       devmat: (1 - failSlots / 50) / successRate,
     },
     slotMap: slots,
@@ -138,17 +165,23 @@ function isWorseResult(a: CalcResult, base: CalcResult): boolean {
   return a.successSlots < base.successSlots || (a.successSlots === base.successSlots && a.failSlots < base.failSlots);
 }
 
+// 開発できない選択装備を列挙する（isCombinableで艦別overrideの確認対象を絞るために使う）
 function missingTargets(slots: SlotMap, resources: Resources, targets: Equipment[]): Equipment[] {
-  return targets.filter(
-    (eq) =>
-      !(
-        (slots[eq.id] || 0) > 0 &&
-        resources.fuel >= eq.req.fuel * 10 &&
-        resources.ammo >= eq.req.ammo * 10 &&
-        resources.steel >= eq.req.steel * 10 &&
-        resources.bauxite >= eq.req.bauxite * 10
-      )
-  );
+  return targets.filter((eq) => !isTargetAvailable(slots, resources, eq));
+}
+
+// 全テーブル共通の最低投入資源を求める:
+// 「開発の最低投入量(各10)」「選択装備の必要資源」「資源条件のみ(shipIds空)で
+// 選択装備に付け替わるoverrideの発動条件」の3者の最大値
+function computeBaseMinReq(targets: Equipment[], overridesByKey: Map<string, Override[]>): Resources {
+  const overrideMinReq = [...overridesByKey.values()]
+    .flat()
+    .filter((o) => o.shipIds.length === 0 && o.to.id !== null && targets.some((t) => t.id === o.to.id))
+    .map((o) => o.minResources)
+    .reduce(maxResources, { fuel: 0, ammo: 0, steel: 0, bauxite: 0 });
+  return targets
+    .map(requiredResources)
+    .reduce(maxResources, maxResources(overrideMinReq, { fuel: 10, ammo: 10, steel: 10, bauxite: 10 }));
 }
 
 // targetIdsを同時に開発できる秘書艦種・テーブルの組み合わせが1つでも存在するかを判定する
@@ -164,25 +197,7 @@ export function isCombinable(
   if (targets.length === 0) return true;
   if (targets.some((eq) => hqLevel < eq.rarity * 10)) return false;
 
-  const allOverrides = [...overridesByKey.values()].flat();
-  const relevantOverrideMinReq = allOverrides
-    .filter((o) => o.shipIds.length === 0 && o.to.id !== null && targets.some((t) => t.id === o.to.id))
-    .reduce(
-      (acc, o) => ({
-        fuel: Math.max(acc.fuel, o.minResources.fuel),
-        ammo: Math.max(acc.ammo, o.minResources.ammo),
-        steel: Math.max(acc.steel, o.minResources.steel),
-        bauxite: Math.max(acc.bauxite, o.minResources.bauxite),
-      }),
-      { fuel: 0, ammo: 0, steel: 0, bauxite: 0 }
-    );
-
-  const baseMinReq: Resources = {
-    fuel: Math.max(...targets.map((e) => Math.max(e.req.fuel * 10, 10)), relevantOverrideMinReq.fuel),
-    ammo: Math.max(...targets.map((e) => Math.max(e.req.ammo * 10, 10)), relevantOverrideMinReq.ammo),
-    steel: Math.max(...targets.map((e) => Math.max(e.req.steel * 10, 10)), relevantOverrideMinReq.steel),
-    bauxite: Math.max(...targets.map((e) => Math.max(e.req.bauxite * 10, 10)), relevantOverrideMinReq.bauxite),
-  };
+  const baseMinReq = computeBaseMinReq(targets, overridesByKey);
 
   for (const secretaryType of SECRETARY_TYPES) {
     for (const table of TABLES) {
@@ -199,6 +214,7 @@ export function isCombinable(
         (o) => o.shipIds.length > 0 && o.to.id !== null && missingIds.has(o.to.id)
       );
       for (const o of candidateOverrides) {
+        // o.shipIds のどの艦を選んでも o 自体は発動するため、先頭艦を代表として確認する
         const modified = applyOverrides(baseSlots, relevantOverrides, resources, o.shipIds[0]);
         if (allTargetsAvailable(modified, resources, targets)) return true;
       }
@@ -207,6 +223,9 @@ export function isCombinable(
   return false;
 }
 
+// 秘書艦種×テーブル12通りを全探索し、候補レシピを生成する。各組み合わせで
+// 「艦を指定しないbase候補」と「艦別overrideで結果がbaseより良くなる艦の候補」を作り、
+// 期待資材消費の昇順でソートして返す
 export function calcOptimal(
   targetIds: number[],
   hqLevel: number,
@@ -224,32 +243,14 @@ export function calcOptimal(
     }
   }
 
-  const allOverrides = [...overridesByKey.values()].flat();
-  const relevantOverrideMinReq = allOverrides
-    .filter((o) => o.shipIds.length === 0 && o.to.id !== null && targets.some((t) => t.id === o.to.id))
-    .reduce(
-      (acc, o) => ({
-        fuel: Math.max(acc.fuel, o.minResources.fuel),
-        ammo: Math.max(acc.ammo, o.minResources.ammo),
-        steel: Math.max(acc.steel, o.minResources.steel),
-        bauxite: Math.max(acc.bauxite, o.minResources.bauxite),
-      }),
-      { fuel: 0, ammo: 0, steel: 0, bauxite: 0 }
-    );
-
-  const baseMinReq: Resources = {
-    fuel: Math.max(...targets.map((e) => Math.max(e.req.fuel * 10, 10)), relevantOverrideMinReq.fuel),
-    ammo: Math.max(...targets.map((e) => Math.max(e.req.ammo * 10, 10)), relevantOverrideMinReq.ammo),
-    steel: Math.max(...targets.map((e) => Math.max(e.req.steel * 10, 10)), relevantOverrideMinReq.steel),
-    bauxite: Math.max(...targets.map((e) => Math.max(e.req.bauxite * 10, 10)), relevantOverrideMinReq.bauxite),
-  };
+  const baseMinReq = computeBaseMinReq(targets, overridesByKey);
 
   const candidates: Candidate[] = [];
 
   // 改造後艦(誰かのafterId先になっている艦)より改造前艦を優先して処理し、
   // 同一結果にグループ化される際の代表ラベルが改造前艦になるようにする。
   // 改造段階が同じ艦同士は、無関係な他のoverrideのshipIds出現順に左右されないよう
-  // sortId(艦歴順)で決定的に順序付けする
+  // sortId(ゲーム内図鑑順)で決定的に順序付けする
   const afterIdTargets = new Set(
     [...shipById.values()].map((s) => s.afterId).filter((id): id is number => id !== null)
   );
@@ -325,6 +326,7 @@ export function calcOptimal(
     c.result.expectedCost.fuel + c.result.expectedCost.ammo +
     c.result.expectedCost.steel + c.result.expectedCost.bauxite;
 
+  // 期待資材消費の昇順 → 対象開発率の降順 → 開発失敗率の降順 → 4資源合計の昇順
   candidates.sort((a, b) =>
     a.result.expectedCost.devmat - b.result.expectedCost.devmat ||
     b.result.successRate - a.result.successRate ||

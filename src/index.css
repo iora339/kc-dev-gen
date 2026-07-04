@@ -1,3 +1,7 @@
+/*
+ * スタイルの方針: レイアウトや個別の見た目は各コンポーネントのインライン style で指定し、
+ * このファイルには CSS 変数（配色・フォント等のデザイントークン）とグローバルな要素スタイルのみ置く
+ */
 :root {
   --font-sans: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
 
@@ -66,6 +70,8 @@ button {
   border-radius: 2px;
 }
 
+/* 装備選択と結果一覧の2カラム構成（display: grid 等は App.tsx のインライン style 側にある）。
+   850px以下では縦積みの1カラムに切り替える */
 .main-grid {
   grid-template-columns: 1fr 1fr;
 }
