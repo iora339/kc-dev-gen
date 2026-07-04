@@ -331,8 +331,13 @@ export function calcOptimal(
         excludedShipComputations.map(({ shipId, provisionalEqIds }) => [shipId, provisionalEqIds])
       );
 
-      if (allTargetsAvailable(baseModifiedSlots, resources, targets) && baseResult) {
-        candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps, provisionalEqIds: baseProvisionalEqIds, excludedShipProvisionalEqIds });
+      // base（艦指定なし）が対象を全て開発できる有効候補ならその結果を昇格判定の基準にする。
+      // 無効（対象不足。例: 艦別overrideでしか出ない装備を含む）なら null とし、
+      // 対象が揃う艦候補を base と同等でも常に採用する（唯一の成立レシピを取りこぼさない）
+      const baseCandidateResult =
+        baseResult && allTargetsAvailable(baseModifiedSlots, resources, targets) ? baseResult : null;
+      if (baseCandidateResult) {
+        candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseCandidateResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps, provisionalEqIds: baseProvisionalEqIds, excludedShipProvisionalEqIds });
       }
 
       // 同じスロット構成の艦をグループ化する（slotMapのJSON文字列をキーに1回だけ照合）。
@@ -343,7 +348,7 @@ export function calcOptimal(
         if (!ship || !modResult) continue;
         if (!allTargetsAvailable(modified, resources, targets)) continue;
 
-        if (!baseResult || isBetterResult(modResult, baseResult)) {
+        if (!baseCandidateResult || isBetterResult(modResult, baseCandidateResult)) {
           const groupKey = `${JSON.stringify(modResult.slotMap)}|${provisionalEqIds.join(",")}`;
           const existing = candidateByGroupKey.get(groupKey);
           if (existing) {
