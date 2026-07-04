@@ -20,6 +20,26 @@ function deltaColor(delta: number, defaultColor: string): string {
   return delta < 0 ? "var(--text-danger)" : delta > 0 ? "var(--text-success)" : defaultColor;
 }
 
+// 増減%を符号付き文字列にする（例: +2% / -2% / 0%）。増加時のみ + を付与する
+function deltaText(delta: number): string {
+  return `${delta > 0 ? "+" : ""}${delta.toFixed(0)}%`;
+}
+
+// 最も多くの要素が取る値（最頻値）を返す。同数の場合は先に出現した値を優先する。
+// 除外艦グループの「一般的な艦の増減」を求めるのに使い、少数の特殊艦（天津風等）の
+// 値に引きずられないようにする
+function mostCommon(values: number[]): number {
+  const counts = new Map<number, number>();
+  let best = values[0];
+  let bestCount = 0;
+  for (const v of values) {
+    const c = (counts.get(v) ?? 0) + 1;
+    counts.set(v, c);
+    if (c > bestCount) { best = v; bestCount = c; }
+  }
+  return best;
+}
+
 interface Props {
   candidate: Candidate;
   targets: Equipment[];
@@ -211,30 +231,30 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
   function formatSlotDelta(slots: number, baseSlots: number, defaultColor: string) {
     const pct = slots / 50 * 100;
     const delta = pct - baseSlots / 50 * 100;
-    const text = `${pct.toFixed(0)}%${delta !== 0 ? `(${delta > 0 ? "+" : ""}${delta.toFixed(0)}%)` : ""}`;
+    const text = `${pct.toFixed(0)}%${delta !== 0 ? `(${deltaText(delta)})` : ""}`;
     return { color: deltaColor(delta, defaultColor), text };
   }
 
   // 除外艦ポップアップ用に増減量のみ（合計値なし）を色分けして返す
   function formatSlotDeltaOnly(slots: number, baseSlots: number) {
     const delta = (slots - baseSlots) / 50 * 100;
-    const text = `${delta > 0 ? "+" : ""}${delta.toFixed(0)}%`;
-    return { color: deltaColor(delta, "var(--text-primary)"), text };
+    return { color: deltaColor(delta, "var(--text-primary)"), text: deltaText(delta) };
   }
 
-  // 除外艦グループ（艦種名でまとめた表示上のグループ）内の全艦で共通する増減のみ抽出する。
-  // 艦種丸ごと除外扱いでも艦ごとに適用されるoverrideが異なる場合があるため、値が揃わない装備は表示しない
+  // 除外艦グループ（艦種名でまとめた表示上のグループ）の「一般的な艦」の増減を抽出する。
+  // 各装備のスロット値はグループ内の最頻値を代表とするため、少数の特殊艦（天津風の8cm高角砲
+  // 追加-2%等）が混ざっても多数派の値が表示される。特殊艦だけが変化させる装備は最頻値が
+  // 基準値と一致するので表示されない
   function getExcludedShipChanges(group: { label: string; shipIds: number[] }) {
     const memberSlotMaps = group.shipIds.map((id) => excludedShipSlotMaps[id] || {});
     // グループ内のいずれかの艦で暫定overrideの影響を受けた装備は⚠バッジの対象にする
     const provisionalIds = new Set(group.shipIds.flatMap((id) => excludedShipProvisionalEqIds[id] ?? []));
     return unionSlotIds(baseSlotMap, ...memberSlotMaps)
       .map((id) => {
-        const slotsValues = memberSlotMaps.map((m) => m[id] || 0);
-        const isCommon = slotsValues.every((v) => v === slotsValues[0]);
-        return { eq: equipmentById.get(id)!, slots: slotsValues[0], baseSlots: baseSlotMap[id] || 0, isCommon, provisional: provisionalIds.has(id) };
+        const slots = mostCommon(memberSlotMaps.map((m) => m[id] || 0));
+        return { eq: equipmentById.get(id)!, slots, baseSlots: baseSlotMap[id] || 0, provisional: provisionalIds.has(id) };
       })
-      .filter((x) => x.eq && x.isCommon && x.slots !== x.baseSlots && canDevelop(x.eq, resources, hqLevel))
+      .filter((x) => x.eq && x.slots !== x.baseSlots && canDevelop(x.eq, resources, hqLevel))
       .sort((a, b) => (b.slots - b.baseSlots) - (a.slots - a.baseSlots));
   }
 
