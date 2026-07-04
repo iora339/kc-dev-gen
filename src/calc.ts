@@ -281,14 +281,17 @@ export function calcOptimal(
       const resources = adjustForTable(baseMinReq, table);
       const baseSlots = buildBaseSlots(devTableData, secretaryType, table);
       const relevantOverrides = overridesByKey.get(`${secretaryType}_${table}`) ?? [];
-      // 暫定overrideを含む場合のみ、確定データのみの構成と比較して⚠対象装備を割り出す。
+      const baseModifiedSlots = applyOverrides(baseSlots, relevantOverrides, resources, null);
+
+      // 暫定overrideを含む場合のみ、同じ秘書艦での確定データのみの構成と比較して⚠対象装備を割り出す。
       // 暫定が無ければ差分は常に空なので確定計算を省く
       const hasProvisional = relevantOverrides.some((o) => o.provisional);
       const confirmedOverrides = hasProvisional ? relevantOverrides.filter((o) => !o.provisional) : relevantOverrides;
-      const baseModifiedSlots = applyOverrides(baseSlots, relevantOverrides, resources, null);
-      const baseProvisionalEqIds = hasProvisional
-        ? provisionalDiffIds(baseModifiedSlots, applyOverrides(baseSlots, confirmedOverrides, resources, null), resources, equipmentById, hqLevel)
-        : [];
+      const provisionalIdsFor = (fullSlots: SlotMap, shipId: number | null) =>
+        hasProvisional
+          ? provisionalDiffIds(fullSlots, applyOverrides(baseSlots, confirmedOverrides, resources, shipId), resources, equipmentById, hqLevel)
+          : [];
+      const baseProvisionalEqIds = provisionalIdsFor(baseModifiedSlots, null);
 
       const shipIdsWithOverride = [
         ...new Set(
@@ -311,10 +314,7 @@ export function calcOptimal(
       const shipComputations = shipIdsWithOverride.map((shipId) => {
         const modified = applyOverrides(baseSlots, relevantOverrides, resources, shipId);
         const modResult = calcResult(modified, resources, targets, equipmentById, hqLevel);
-        const provisionalEqIds = hasProvisional
-          ? provisionalDiffIds(modified, applyOverrides(baseSlots, confirmedOverrides, resources, shipId), resources, equipmentById, hqLevel)
-          : [];
-        return { shipId, modified, modResult, provisionalEqIds };
+        return { shipId, modified, modResult, provisionalEqIds: provisionalIdsFor(modified, shipId) };
       });
 
       // overrideにより対象開発率・開発失敗率がbaseより悪化する艦を収集（除外すべき艦）
