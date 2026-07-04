@@ -74,6 +74,42 @@
   {
     "id": 3,
     "shipIds": [
+      421,
+      330,
+      963,
+      422,
+      346,
+      532,
+      537,
+      423,
+      357,
+      968,
+      533,
+      538
+    ],
+    "secretary": "水雷系",
+    "table": "ボーキ",
+    "to": {
+      "id": 3,
+      "slots": 1
+    },
+    "from": [
+      {
+        "id": 44,
+        "slots": 1
+      }
+    ],
+    "minResources": {
+      "fuel": 0,
+      "ammo": 0,
+      "steel": 0,
+      "bauxite": 0
+    },
+    "provisional": true
+  },
+  {
+    "id": 4,
+    "shipIds": [
       655,
       660,
       595,
@@ -108,7 +144,7 @@
     "provisional": true
   },
   {
-    "id": 4,
+    "id": 5,
     "shipIds": [
       655,
       660,
@@ -144,7 +180,7 @@
     "provisional": true
   },
   {
-    "id": 5,
+    "id": 6,
     "shipIds": [
       965,
       970
@@ -157,7 +193,7 @@
     },
     "from": [
       {
-        "id": 39,
+        "id": 2,
         "slots": 1
       }
     ],
@@ -170,7 +206,7 @@
     "provisional": true
   },
   {
-    "id": 6,
+    "id": 7,
     "shipIds": [
       589,
       693,
