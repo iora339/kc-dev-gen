@@ -20,14 +20,13 @@ function deltaColor(delta: number, defaultColor: string): string {
   return delta < 0 ? "var(--text-danger)" : delta > 0 ? "var(--text-success)" : defaultColor;
 }
 
-// 増減%を符号付き文字列にする（例: +2% / -2% / 0%）。増加時のみ + を付与する
+// 増減%を符号付き文字列にする（例: +2% / -2% / 0%）
 function deltaText(delta: number): string {
   return `${delta > 0 ? "+" : ""}${delta.toFixed(0)}%`;
 }
 
-// 最も多くの要素が取る値（最頻値）を返す。同数の場合は先に出現した値を優先する。
-// 除外艦グループの「一般的な艦の増減」を求めるのに使い、少数の特殊艦（天津風等）の
-// 値に引きずられないようにする
+// 最頻値を返す（同数なら先出現を優先）。除外艦グループで少数の特殊艦に引きずられず
+// 「一般的な艦の増減」を得るのに使う
 function mostCommon(values: number[]): number {
   const counts = new Map<number, number>();
   let best = values[0];
@@ -241,10 +240,8 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
     return { color: deltaColor(delta, "var(--text-primary)"), text: deltaText(delta) };
   }
 
-  // 除外艦グループ（艦種名でまとめた表示上のグループ）の「一般的な艦」の増減を抽出する。
-  // 各装備のスロット値はグループ内の最頻値を代表とするため、少数の特殊艦（天津風の8cm高角砲
-  // 追加-2%等）が混ざっても多数派の値が表示される。特殊艦だけが変化させる装備は最頻値が
-  // 基準値と一致するので表示されない
+  // 除外艦グループの「一般的な艦」の増減を抽出する。装備ごとにグループ内の最頻値を代表とし、
+  // 少数の特殊艦（天津風等）に引きずられない。特殊艦のみが変える装備は最頻値=基準値で非表示になる
   function getExcludedShipChanges(group: { label: string; shipIds: number[] }) {
     const memberSlotMaps = group.shipIds.map((id) => excludedShipSlotMaps[id] || {});
     // グループ内のいずれかの艦で暫定overrideの影響を受けた装備は⚠バッジの対象にする
