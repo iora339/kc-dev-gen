@@ -106,6 +106,27 @@ function applyOverrides(
   return slots;
 }
 
+// 暫定込みと確定のみのスロット構成を比較し、暫定データで表示数値が変わる装備IDを返す
+// （空でなければ⚠バッジ表示対象）。開発可能な装備に限定するのは、暫定overrideが
+// スロット均衡（付け替え先=付け替え元合計）で、開発不可装備間の移動では失敗率が
+// 変わらず表示に出ないため。境界をまたぐ移動は開発可能側が差分に残るので取りこぼさない
+function provisionalDiffIds(
+  full: SlotMap,
+  confirmed: SlotMap,
+  resources: Resources,
+  equipmentById: Map<number, Equipment>,
+  hqLevel: number
+): number[] {
+  const ids = new Set<number>();
+  for (const key of [...Object.keys(full), ...Object.keys(confirmed)]) {
+    const id = Number(key);
+    if ((full[id] || 0) === (confirmed[id] || 0)) continue;
+    const eq = equipmentById.get(id);
+    if (eq && canDevelop(eq, resources, hqLevel)) ids.add(id);
+  }
+  return [...ids].sort((a, b) => a - b);
+}
+
 // 対象装備1件が現在のスロット構成・投入資源で開発可能か
 function isTargetAvailable(slots: SlotMap, resources: Resources, eq: Equipment): boolean {
   return (slots[eq.id] || 0) > 0 && meetsRequirement(resources, requiredResources(eq));
@@ -260,7 +281,14 @@ export function calcOptimal(
       const resources = adjustForTable(baseMinReq, table);
       const baseSlots = buildBaseSlots(devTableData, secretaryType, table);
       const relevantOverrides = overridesByKey.get(`${secretaryType}_${table}`) ?? [];
+      // 暫定overrideを含む場合のみ、確定データのみの構成と比較して⚠対象装備を割り出す。
+      // 暫定が無ければ差分は常に空なので確定計算を省く
+      const hasProvisional = relevantOverrides.some((o) => o.provisional);
+      const confirmedOverrides = hasProvisional ? relevantOverrides.filter((o) => !o.provisional) : relevantOverrides;
       const baseModifiedSlots = applyOverrides(baseSlots, relevantOverrides, resources, null);
+      const baseProvisionalEqIds = hasProvisional
+        ? provisionalDiffIds(baseModifiedSlots, applyOverrides(baseSlots, confirmedOverrides, resources, null), resources, equipmentById, hqLevel)
+        : [];
 
       const shipIdsWithOverride = [
         ...new Set(
@@ -278,11 +306,15 @@ export function calcOptimal(
 
       const baseResult = calcResult(baseModifiedSlots, resources, targets, equipmentById, hqLevel);
 
-      // 艦ごとのoverride適用結果を1回だけ計算し、除外艦判定・独自候補への昇格判定の両方で使い回す
+      // 艦ごとのoverride適用結果を1回だけ計算し、除外艦判定・独自候補への昇格判定の両方で使い回す。
+      // provisionalEqIds は「暫定込み」と「確定のみ」の構成差分（＝暫定が数値を動かした装備）
       const shipComputations = shipIdsWithOverride.map((shipId) => {
         const modified = applyOverrides(baseSlots, relevantOverrides, resources, shipId);
         const modResult = calcResult(modified, resources, targets, equipmentById, hqLevel);
-        return { shipId, modified, modResult };
+        const provisionalEqIds = hasProvisional
+          ? provisionalDiffIds(modified, applyOverrides(baseSlots, confirmedOverrides, resources, shipId), resources, equipmentById, hqLevel)
+          : [];
+        return { shipId, modified, modResult, provisionalEqIds };
       });
 
       // overrideにより対象開発率・開発失敗率がbaseより悪化する艦を収集（除外すべき艦）
@@ -295,27 +327,31 @@ export function calcOptimal(
       const excludedShipSlotMaps = Object.fromEntries(
         excludedShipComputations.map(({ shipId, modified }) => [shipId, modified])
       );
+      const excludedShipProvisionalEqIds = Object.fromEntries(
+        excludedShipComputations.map(({ shipId, provisionalEqIds }) => [shipId, provisionalEqIds])
+      );
 
       if (allTargetsAvailable(baseModifiedSlots, resources, targets) && baseResult) {
-        candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps });
+        candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps, provisionalEqIds: baseProvisionalEqIds, excludedShipProvisionalEqIds });
       }
 
-      // 同じスロット構成の艦をグループ化する（slotMapのJSON文字列をキーに1回だけ照合）
-      const candidateBySlotJson = new Map<string, Candidate>();
-      for (const { shipId, modified, modResult } of shipComputations) {
+      // 同じスロット構成の艦をグループ化する（slotMapのJSON文字列をキーに1回だけ照合）。
+      // 確定overrideの艦と暫定overrideの艦が偶然同じ構成になっても混ざらないよう、暫定差分もキーに含める
+      const candidateByGroupKey = new Map<string, Candidate>();
+      for (const { shipId, modified, modResult, provisionalEqIds } of shipComputations) {
         const ship = shipById.get(shipId);
         if (!ship || !modResult) continue;
         if (!allTargetsAvailable(modified, resources, targets)) continue;
 
         if (!baseResult || isBetterResult(modResult, baseResult)) {
-          const resultSlotMapJson = JSON.stringify(modResult.slotMap);
-          const existing = candidateBySlotJson.get(resultSlotMapJson);
+          const groupKey = `${JSON.stringify(modResult.slotMap)}|${provisionalEqIds.join(",")}`;
+          const existing = candidateByGroupKey.get(groupKey);
           if (existing) {
             existing.shipIds.push(shipId);
           } else {
-            const candidate = { label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps: {} };
+            const candidate = { label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps: {}, provisionalEqIds, excludedShipProvisionalEqIds: {} };
             candidates.push(candidate);
-            candidateBySlotJson.set(resultSlotMapJson, candidate);
+            candidateByGroupKey.set(groupKey, candidate);
           }
         }
       }

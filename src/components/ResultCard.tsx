@@ -35,11 +35,22 @@ interface Props {
 // 表示専用のテーブル名の上書き。ここに無いテーブルはデータ上の名前をそのまま表示する
 const TABLE_LABELS: Record<string, string> = { "鋼燃": "鋼材・燃料" };
 
+// 暫定検証データ(provisional override)による補正を示す⚠バッジ。
+// U+FE0E(異体字セレクタ)で単色字形を強制してCSSの色指定を効かせ、
+// inline-blockで親要素のtext-decoration(下線)が及ばないようにする
+function ProvisionalBadge() {
+  return (
+    <span title="暫定検証データによる補正" style={{ display: "inline-block", color: "var(--text-warning)", cursor: "help", marginLeft: 3 }}>
+      {"⚠︎"}
+    </span>
+  );
+}
+
 // 装備名と値（開発率や増減%）を左右に並べる1行。ポップアップ内の一覧表示で共用する
-function SlotRow({ name, text, color, bold }: { name: string; text: string; color: string; bold?: boolean }) {
+function SlotRow({ name, text, color, bold, provisional }: { name: string; text: string; color: string; bold?: boolean; provisional?: boolean }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", gap: 20, color, fontWeight: bold ? 500 : undefined }}>
-      <span>{name}</span><span>{text}</span>
+      <span>{name}{provisional && <ProvisionalBadge />}</span><span>{text}</span>
     </div>
   );
 }
@@ -164,7 +175,9 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
     return () => document.removeEventListener("mousedown", onOutsideClick);
   }, [selectedExcludedGroup]);
 
-  const { label, shipIds, excludedShipIds, table, resources, result, baseSlotMap, excludedShipSlotMaps } = candidate;
+  const { label, shipIds, excludedShipIds, table, resources, result, baseSlotMap, excludedShipSlotMaps, provisionalEqIds, excludedShipProvisionalEqIds } = candidate;
+  // provisionalEqIds が空でなければ暫定データがこの候補の数値に影響している
+  const hasProvisional = provisionalEqIds.length > 0;
   const { expectedCost, failRate, successRate, slotMap } = result;
 
   const shipById = useMemo(() => new Map(ships.map((s) => [s.id, s])), [ships]);
@@ -192,6 +205,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
   );
 
   const isTarget = (id: number) => targets.some((t) => t.id === id);
+  const provisionalEqIdSet = useMemo(() => new Set(provisionalEqIds), [provisionalEqIds]);
 
   // override前後の増減を色分け・(+2%)等の表記にして返す（対象装備・その他装備の詳細表示で共用）
   function formatSlotDelta(slots: number, baseSlots: number, defaultColor: string) {
@@ -212,11 +226,13 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
   // 艦種丸ごと除外扱いでも艦ごとに適用されるoverrideが異なる場合があるため、値が揃わない装備は表示しない
   function getExcludedShipChanges(group: { label: string; shipIds: number[] }) {
     const memberSlotMaps = group.shipIds.map((id) => excludedShipSlotMaps[id] || {});
+    // グループ内のいずれかの艦で暫定overrideの影響を受けた装備は⚠バッジの対象にする
+    const provisionalIds = new Set(group.shipIds.flatMap((id) => excludedShipProvisionalEqIds[id] ?? []));
     return unionSlotIds(baseSlotMap, ...memberSlotMaps)
       .map((id) => {
         const slotsValues = memberSlotMaps.map((m) => m[id] || 0);
         const isCommon = slotsValues.every((v) => v === slotsValues[0]);
-        return { eq: equipmentById.get(id)!, slots: slotsValues[0], baseSlots: baseSlotMap[id] || 0, isCommon };
+        return { eq: equipmentById.get(id)!, slots: slotsValues[0], baseSlots: baseSlotMap[id] || 0, isCommon, provisional: provisionalIds.has(id) };
       })
       .filter((x) => x.eq && x.isCommon && x.slots !== x.baseSlots && canDevelop(x.eq, resources, hqLevel))
       .sort((a, b) => (b.slots - b.baseSlots) - (a.slots - a.baseSlots));
@@ -225,7 +241,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
   return (
     <div style={{ background: "var(--surface-2)", border: "0.5px solid var(--border)", borderRadius: 12, padding: "1.25rem 1.5rem", position: "relative" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <span style={{ fontSize: 16, fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 16, fontWeight: 500 }}>{label}{hasProvisional && <ProvisionalBadge />}</span>
         {otherCount > 0 && (
           <div style={{ position: "relative" }}>
             <button
@@ -237,7 +253,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
             {showShips && (
               <div style={popupStyle({ top: "calc(100% + 4px)", left: 0 })}>
                 <div style={popupHeadingStyle}>秘書艦候補</div>
-                {shipNames.map((name) => <div key={name} style={{ lineHeight: 1.8 }}>{name}</div>)}
+                {shipNames.map((name) => <div key={name} style={{ lineHeight: 1.8 }}>{name}{hasProvisional && <ProvisionalBadge />}</div>)}
               </div>
             )}
           </div>
@@ -261,15 +277,15 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
                       title="クリックで増減する装備を表示"
                       style={{ lineHeight: 1.8, cursor: "pointer", textDecoration: "underline dotted", color: selectedExcludedGroup?.label === group.label ? "var(--text-accent)" : "inherit" }}
                     >
-                      {group.label}
+                      {group.label}{group.shipIds.some((id) => (excludedShipProvisionalEqIds[id] ?? []).length > 0) && <ProvisionalBadge />}
                     </div>
                     {selectedExcludedGroup?.label === group.label && (
                       <div style={popupStyle({ top: 0, right: "calc(100% + 8px)", zIndex: 11 })}>
                         <div style={popupHeadingStyle}>{group.label} / 増減する装備</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                          {getExcludedShipChanges(group).map(({ eq, slots, baseSlots }) => {
+                          {getExcludedShipChanges(group).map(({ eq, slots, baseSlots, provisional }) => {
                             const { color, text } = formatSlotDeltaOnly(slots, baseSlots);
-                            return <SlotRow key={eq.id} name={eq.name} text={text} color={color} />;
+                            return <SlotRow key={eq.id} name={eq.name} text={text} color={color} provisional={provisional} />;
                           })}
                         </div>
                       </div>
@@ -325,7 +341,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
                 <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                   {allSlots.filter((x) => isTarget(x.eq.id)).map(({ eq, slots, baseSlots }) => {
                     const { color, text } = formatSlotDelta(slots, baseSlots, "var(--text-accent)");
-                    return <SlotRow key={eq.id} name={eq.name} text={text} color={color} bold />;
+                    return <SlotRow key={eq.id} name={eq.name} text={text} color={color} bold provisional={provisionalEqIdSet.has(eq.id)} />;
                   })}
                   {allSlots.some((x) => !isTarget(x.eq.id)) && (
                     <div style={{ borderTop: "0.5px solid var(--border)", margin: "4px 0" }} />
@@ -335,7 +351,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
                     .sort((a, b) => a.eq.type - b.eq.type || a.eq.id - b.eq.id)
                     .map(({ eq, slots, baseSlots }) => {
                       const { color, text } = formatSlotDelta(slots, baseSlots, "var(--text-primary)");
-                      return <SlotRow key={eq.id} name={eq.name} text={text} color={color} />;
+                      return <SlotRow key={eq.id} name={eq.name} text={text} color={color} provisional={provisionalEqIdSet.has(eq.id)} />;
                     })}
                   {failRate > 0 && (
                     <>
@@ -356,7 +372,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
             const pct = slots / 50 * 100;
             return (
               <Fragment key={eq.id}>
-                <span style={{ fontSize: 13, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{eq.name}</span>
+                <span style={{ fontSize: 13, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{eq.name}{provisionalEqIdSet.has(eq.id) && <ProvisionalBadge />}</span>
                 <div style={{ height: 5, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
                   <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", background: "var(--fill-accent)" }} />
                 </div>
