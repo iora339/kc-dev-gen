@@ -191,6 +191,12 @@ function missingTargets(slots: SlotMap, resources: Resources, targets: Equipment
   return targets.filter((eq) => !isTargetAvailable(slots, resources, eq));
 }
 
+// baseでは開発できる選択装備が、この構成では開発不可になるか。合計成功率は同じでも
+// 別の選択装備へ付け替わり狙った装備が出せなくなる艦を除外艦判定で拾うために使う
+function dropsAnyTarget(base: SlotMap, slots: SlotMap, resources: Resources, targets: Equipment[]): boolean {
+  return targets.some((eq) => isTargetAvailable(base, resources, eq) && !isTargetAvailable(slots, resources, eq));
+}
+
 // 全テーブル共通の最低投入資源を求める:
 // 「開発の最低投入量(各10)」「選択装備の必要資源」「資源条件のみ(shipIds空)で
 // 選択装備に付け替わるoverrideの発動条件」の3者の最大値
@@ -317,11 +323,12 @@ export function calcOptimal(
         return { shipId, modified, modResult, provisionalEqIds: provisionalIdsFor(modified, shipId) };
       });
 
-      // overrideにより対象開発率・開発失敗率がbaseより悪化する艦を収集（除外すべき艦）
-      const excludedShipComputations = shipComputations.filter(({ modResult }) => {
+      // 除外すべき艦を収集する: overrideで結果がbaseより悪化する艦、または合計成功率は
+      // 同じでも選択装備の一部が開発不可になる艦（別の選択装備へ付け替わり相殺されるケース）
+      const excludedShipComputations = shipComputations.filter(({ modified, modResult }) => {
         if (!baseResult) return false;
         if (!modResult) return true;
-        return isWorseResult(modResult, baseResult);
+        return isWorseResult(modResult, baseResult) || dropsAnyTarget(baseModifiedSlots, modified, resources, targets);
       });
       const excludedShipIds = excludedShipComputations.map(({ shipId }) => shipId);
       const excludedShipSlotMaps = Object.fromEntries(
