@@ -302,7 +302,7 @@ export default function App() {
         <p style={{ margin: 0, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
           <a href="https://github.com/iora339/kc-dev-gen" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>GitHub</a>
           <span style={{ color: "var(--text-muted)" }}>/</span>
-          <span>v0.2.0</span>
+          <span>v0.3.0</span>
         </p>
       </footer>
     </div>

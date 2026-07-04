@@ -1,9 +1,0 @@
-{
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "destination": "https://iora339.github.io/kc-dev-gen/$1",
-      "permanent": true
-    }
-  ]
-}

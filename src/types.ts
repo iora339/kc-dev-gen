@@ -103,4 +103,9 @@ export interface Candidate {
   baseSlotMap: SlotMap;
   // excludedShipIds各艦のoverride適用後slotMap。除外艦ポップアップでの増減差分表示に使う
   excludedShipSlotMaps: Record<number, SlotMap>;
+  // 暫定データで表示数値が変わる装備のID一覧（算出は calc.ts の provisionalDiffIds 参照）。
+  // 空でなければ暫定データが結果に影響しており、装備名・艦名ラベルの⚠バッジ表示対象になる
+  provisionalEqIds: number[];
+  // excludedShipIds各艦の同ID一覧（除外艦の⚠バッジ表示に使う）
+  excludedShipProvisionalEqIds: Record<number, number[]>;
 }

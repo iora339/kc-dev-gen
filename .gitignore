@@ -12,11 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Vite default assets (not used)
-src/assets/hero.png
-src/assets/react.svg
-src/assets/vite.svg
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
