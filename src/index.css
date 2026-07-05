@@ -71,13 +71,33 @@ button {
 }
 
 /* 装備選択と結果一覧の2カラム構成（display: grid 等は App.tsx のインライン style 側にある）。
-   850px以下では縦積みの1カラムに切り替える */
+   グリッド比 1.4fr : 1fr で配置。850px以下では1カラムに切り替える */
 .main-grid {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.4fr 1fr;
+}
+
+.main-grid > div:first-child {
+  max-width: 700px;
+}
+
+.main-grid > div:last-child {
+  max-width: 450px;
+}
+
+@media (min-width: 851px) {
+  .main-grid > div:last-child {
+    min-width: 380px;
+  }
 }
 
 @media (max-width: 850px) {
   .main-grid {
     grid-template-columns: 1fr;
+  }
+
+  .main-grid > div:first-child,
+  .main-grid > div:last-child {
+    max-width: none;
+    min-width: auto;
   }
 }
