@@ -21,7 +21,7 @@ export interface Equipment {
   type: number;
   // アイコン種別ID（typeColors.tsの配色キー）
   iconType: number;
-  // レア度ではなく司令部Lv要件の元値（rarity×10 が開発に必要な司令部Lv）
+  // レア度。司令部Lv要件の元値（rarity×10 が開発に必要な司令部Lv。Lv40以上で全ての装備が開発可能）
   rarity: number;
   // 開発の最低投入資源。×10した値が実際の必要資源量
   req: Resources;
@@ -34,7 +34,7 @@ export interface Ship {
   // 改造後の艦ID（最終改造形態なら null）。改造チェーンのグルーピング表示や、
   // 改造前艦を候補の代表ラベルに優先する判定に使う
   afterId: number | null;
-  // ゲーム内図鑑順(api_sortno)のソートキー。艦一覧の表示順を決定的にするために使う
+  // ゲーム内表示順(api_sortno)のソートキー。艦一覧の表示順を決定するために使う
   sortId: number;
 }
 

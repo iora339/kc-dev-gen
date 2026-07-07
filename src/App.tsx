@@ -14,16 +14,15 @@ const EQUIPMENT_CATEGORIES: { label: string; typeIds: number[] }[] = [
   { label: "中口径", typeIds: [2] },
   { label: "大口径", typeIds: [3] },
   { label: "副砲", typeIds: [4] },
+  { label: "魚雷", typeIds: [5, 22, 32] },
   { label: "艦戦", typeIds: [6] },
   { label: "艦爆", typeIds: [7] },
   { label: "艦攻", typeIds: [8] },
   { label: "艦偵", typeIds: [9, 94] },
-  { label: "魚雷", typeIds: [5, 22, 32] },
   { label: "水上機", typeIds: [10, 11, 41, 45] },
   { label: "電探", typeIds: [12, 13, 93] },
-  { label: "強化弾", typeIds: [18, 19, 20] },
   { label: "対潜", typeIds: [14, 15, 40] },
-  { label: "対潜飛行機", typeIds: [25, 26] },
+  { label: "強化弾", typeIds: [18, 19, 20] },
   { label: "機銃", typeIds: [21] },
   { label: "陸上機", typeIds: [47, 48, 49, 53] },
   { label: "その他", typeIds: [] },
@@ -232,7 +231,7 @@ export default function App() {
                 </span>
                 {showPendingInfo && (
                   <div style={popupStyle({ top: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", width: 380, lineHeight: 1.7, color: "var(--text-primary)", whiteSpace: "normal" })}>
-                    まだ検証データが不足している状況ですが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>のデータ（2026-7-4時点）を元に暫定の開発率情報を作成しました。チェックすると以下が計算に含まれるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
+                    検証データが不足していますが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>（2026-7-4時点）を元に暫定の開発率データを作成しました。チェックすると以下が計算に含まれ、<span style={{ display: "inline-block", color: "var(--text-warning)" }}>⚠︎</span>マークが表示されるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
                     <table style={{ borderCollapse: "collapse", marginTop: 8, width: "100%", fontSize: 12, lineHeight: 1.5, tableLayout: "fixed" }}>
                       <thead>
                         <tr>
@@ -298,7 +297,7 @@ export default function App() {
       </div>
       <footer style={{ marginTop: "auto", paddingTop: "2rem", fontSize: 12, color: "var(--text-muted)" }}>
         <p style={{ margin: "0 0 4px" }}>ご意見ご要望はこちらに：<a href="https://marshmallow-qa.com/lmingitwavpu1ou?t=0HNCFk&utm_medium=url_text&utm_source=promotion" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>マシュマロ（匿名メッセージ）</a></p>
-        <p style={{ margin: "0 0 4px" }}>確率参考サイト：<a href="https://bbs.nga.cn/read.php?tid=34725123" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>https://bbs.nga.cn/read.php?tid=34725123</a></p>
+        <p style={{ margin: "0 0 4px" }}>開発率参考サイト：<a href="https://bbs.nga.cn/read.php?tid=34725123" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>https://bbs.nga.cn/read.php?tid=34725123</a></p>
         <p style={{ margin: 0, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
           <a href="https://github.com/iora339/kc-dev-gen" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>GitHub</a>
           <span style={{ color: "var(--text-muted)" }}>/</span>

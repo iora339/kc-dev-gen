@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "fs";
 
 const src = process.argv[2];
 if (!src) {
-  console.error("Usage: node scripts/convert-equipment.js <path/to/start2.json>");
+  console.error("使用法: node scripts/convert-equipment.js <path/to/master.json>");
   process.exit(1);
 }
 
