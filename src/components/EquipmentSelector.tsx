@@ -14,6 +14,8 @@ interface Props {
 
 export function EquipmentSelector({ equipment, developableIds, selectedIds, disabledIds, categories, onToggle }: Props) {
   const [activeCats, setActiveCats] = useState<Set<string>>(new Set());
+  // 「選択可能のみ」: 同時開発不可（disabledIds）の装備を一覧から非表示にする絞り込み。カテゴリ絞り込みと併用可能
+  const [onlySelectable, setOnlySelectable] = useState(false);
   const isSingleColumn = useIsSingleColumn();
 
   function toggleCat(label: string) {
@@ -42,15 +44,28 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
       .filter((c) => c.items.length > 0);
   }, [equipment, developableIds, categories]);
 
-  const visible = allActive ? categorized : categorized.filter((c) => activeCats.has(c.label));
+  const filteredByCategory = allActive ? categorized : categorized.filter((c) => activeCats.has(c.label));
+  // disabledIds には選択中の装備は含まれない（App.tsx側で除外済み）ため、
+  // 単純に除くだけで「選択中 or 選択可能」な装備のみが残る
+  const visible = onlySelectable
+    ? filteredByCategory
+        .map((cat) => ({ ...cat, items: cat.items.filter((e) => !disabledIds.has(e.id)) }))
+        .filter((cat) => cat.items.length > 0)
+    : filteredByCategory;
 
-  const tabStyle = (active: boolean): CSSProperties => ({
-    fontSize: 13, padding: "4px 14px", borderRadius: "var(--radius)",
-    border: `0.5px solid ${active ? "var(--border-accent)" : "var(--border-strong)"}`,
-    background: active ? "var(--bg-accent)" : "transparent",
-    color: active ? "var(--text-accent)" : "var(--text-secondary)",
-    cursor: "pointer",
-  });
+  // カテゴリタグは青系(accent)、「選択可能のみ」は区別のため緑系(success)で表示する
+  const tabStyle = (active: boolean, variant: "accent" | "success" = "accent"): CSSProperties => {
+    const border = variant === "success" ? "var(--border-success-accent)" : "var(--border-accent)";
+    const bg = variant === "success" ? "var(--bg-success-accent)" : "var(--bg-accent)";
+    const color = variant === "success" ? "var(--text-success)" : "var(--text-accent)";
+    return {
+      fontSize: 13, padding: "4px 14px", borderRadius: "var(--radius)",
+      border: `0.5px solid ${active ? border : "var(--border-strong)"}`,
+      background: active ? bg : "transparent",
+      color: active ? color : "var(--text-secondary)",
+      cursor: "pointer",
+    };
+  };
 
   return (
     <div>
@@ -64,6 +79,12 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
             {cat.label}
           </button>
         ))}
+        <button
+          onClick={() => setOnlySelectable((v) => !v)}
+          style={{ ...tabStyle(onlySelectable, "success"), marginLeft: "auto" }}
+        >
+          選択可能のみ
+        </button>
       </div>
       <div style={{
         display: "flex", flexDirection: "column", gap: 10,

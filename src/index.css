@@ -24,6 +24,10 @@
   --bg-accent: rgba(80, 140, 230, 0.12);
   --fill-accent: #5088e0;
 
+  /* 装備選択の「選択可能のみ」タグ用。カテゴリタグ(青系accent)と区別するため text-success と同系色にする */
+  --border-success-accent: rgba(46, 158, 91, 0.4);
+  --bg-success-accent: rgba(46, 158, 91, 0.12);
+
   --radius: 6px;
 }
 
