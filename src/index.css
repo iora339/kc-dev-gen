@@ -75,7 +75,7 @@ button {
 }
 
 /* 装備選択と結果一覧の2カラム構成（display: grid 等は App.tsx のインライン style 側にある）。
-   右カラム(結果一覧)は幅420pxで固定、左カラムが残り幅を使う。949px以下では1カラムに切り替える */
+   右カラム(結果一覧)は幅420pxで固定、左カラムが残り幅を使う。959px以下では1カラムに切り替える */
 .main-grid {
   grid-template-columns: 1fr 420px;
 }
@@ -84,7 +84,7 @@ button {
   max-width: 700px;
 }
 
-@media (max-width: 949px) {
+@media (max-width: 959px) {
   .main-grid {
     grid-template-columns: 1fr;
   }
