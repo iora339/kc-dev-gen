@@ -47,23 +47,12 @@ export function canDevelop(eq: Equipment, resources: Resources, hqLevel: number)
   return meetsRequirement(resources, requiredResources(eq)) && hqLevel >= eq.rarity * 10;
 }
 
-// 「鋼燃」テーブル用：max(fuel,steel) >= ammo かつ max(fuel,steel) >= bauxite を
-// 鋼材を優先して引き上げることで満たすパターン
-function adjustForTableSteel(minReq: Resources): Resources {
-  const { fuel, ammo, bauxite } = minReq;
-  let { steel } = minReq;
-  const need = Math.max(ammo, bauxite);
-  if (Math.max(fuel, steel) < need) steel = need;
-  return { fuel, ammo, steel, bauxite };
-}
-
-// 「鋼燃」テーブル用：同条件を燃料を優先して引き上げることで満たすパターン
-function adjustForTableFuel(minReq: Resources): Resources {
-  const { steel, ammo, bauxite } = minReq;
-  let { fuel } = minReq;
-  const need = Math.max(ammo, bauxite);
-  if (Math.max(fuel, steel) < need) fuel = need;
-  return { fuel, ammo, steel, bauxite };
+// 「鋼燃」テーブル用：max(fuel,steel) >= ammo かつ max(fuel,steel) >= bauxite を、
+// 指定した資源(鋼材 or 燃料)を優先して引き上げることで満たす
+function adjustForTableDual(minReq: Resources, priority: "steel" | "fuel"): Resources {
+  const need = Math.max(minReq.ammo, minReq.bauxite);
+  if (Math.max(minReq.fuel, minReq.steel) >= need) return minReq;
+  return { ...minReq, [priority]: need };
 }
 
 function resourcesEqual(a: Resources, b: Resources): boolean {
@@ -73,8 +62,8 @@ function resourcesEqual(a: Resources, b: Resources): boolean {
 // 「鋼燃」テーブルで鋼材優先・燃料優先の両パターンを試すための候補一覧を返す。
 // 元々どちらかの資源だけで条件を満たす場合は両パターンが同一になるため、その場合は1件に絞る
 function steelFuelPatterns(minReq: Resources): Resources[] {
-  const steelPattern = adjustForTableSteel(minReq);
-  const fuelPattern = adjustForTableFuel(minReq);
+  const steelPattern = adjustForTableDual(minReq, "steel");
+  const fuelPattern = adjustForTableDual(minReq, "fuel");
   return resourcesEqual(steelPattern, fuelPattern) ? [steelPattern] : [steelPattern, fuelPattern];
 }
 
@@ -82,7 +71,7 @@ function steelFuelPatterns(minReq: Resources): Resources[] {
 // 「鋼燃」は鋼材優先パターンを代表として返す（isCombinableの可否判定は1パターンで十分なため。
 // 各装備自身の必要資源は既にminReqに反映済みで、鋼材/燃料どちらのパターンでも判定結果は変わらない）
 function adjustForTable(minReq: Resources, table: TableType): Resources {
-  if (table === "鋼燃") return adjustForTableSteel(minReq);
+  if (table === "鋼燃") return adjustForTableDual(minReq, "steel");
   const { fuel, steel } = minReq;
   let { ammo, bauxite } = minReq;
   if (table === "弾薬") {
@@ -279,6 +268,80 @@ export function isCombinable(
   return false;
 }
 
+// 秘書艦種×テーブル×投入資源1パターン分の候補を計算し、baseおよび艦別override候補をcandidatesに追加する。
+// 「鋼燃」テーブルの鋼材優先・燃料優先パターン探索で1組み合わせにつき最大2回呼ばれる
+function pushCandidatesForResources(
+  candidates: Candidate[],
+  secretaryType: SecretaryType,
+  table: TableType,
+  resources: Resources,
+  baseSlots: SlotMap,
+  relevantOverrides: Override[],
+  shipIdsWithOverride: number[],
+  provisionalIdsFor: (fullSlots: SlotMap, resources: Resources, shipId: number | null) => number[],
+  targets: Equipment[],
+  shipById: Map<number, Ship>,
+  equipmentById: Map<number, Equipment>,
+  hqLevel: number
+): void {
+  const baseModifiedSlots = applyOverrides(baseSlots, relevantOverrides, resources, null);
+  const baseProvisionalEqIds = provisionalIdsFor(baseModifiedSlots, resources, null);
+  const baseResult = calcResult(baseModifiedSlots, resources, targets, equipmentById, hqLevel);
+
+  // 艦ごとのoverride適用結果を1回だけ計算し、除外艦判定・独自候補への昇格判定の両方で使い回す。
+  // provisionalEqIds は「暫定込み」と「確定のみ」の構成差分（＝暫定が数値を動かした装備）
+  const shipComputations = shipIdsWithOverride.map((shipId) => {
+    const modified = applyOverrides(baseSlots, relevantOverrides, resources, shipId);
+    const modResult = calcResult(modified, resources, targets, equipmentById, hqLevel);
+    return { shipId, modified, modResult, provisionalEqIds: provisionalIdsFor(modified, resources, shipId) };
+  });
+
+  // 除外すべき艦を収集する: overrideで結果がbaseより悪化する艦、または合計成功率は
+  // 同じでも選択装備の一部が開発不可になる艦（別の選択装備へ付け替わり相殺されるケース）
+  const excludedShipComputations = shipComputations.filter(({ modified, modResult }) => {
+    if (!baseResult) return false;
+    if (!modResult) return true;
+    return isWorseResult(modResult, baseResult) || dropsAnyTarget(baseModifiedSlots, modified, resources, targets);
+  });
+  const excludedShipIds = excludedShipComputations.map(({ shipId }) => shipId);
+  const excludedShipSlotMaps = Object.fromEntries(
+    excludedShipComputations.map(({ shipId, modified }) => [shipId, modified])
+  );
+  const excludedShipProvisionalEqIds = Object.fromEntries(
+    excludedShipComputations.map(({ shipId, provisionalEqIds }) => [shipId, provisionalEqIds])
+  );
+
+  // base（艦指定なし）が対象を全て開発できるなら昇格判定の基準にする。無効（対象不足＝
+  // 艦別overrideでしか出ない装備を含む等）なら null とし、対象が揃う艦候補を base と同等でも
+  // 常に採用する（唯一の成立レシピを取りこぼさない）
+  const baseCandidateResult =
+    baseResult && allTargetsAvailable(baseModifiedSlots, resources, targets) ? baseResult : null;
+  if (baseCandidateResult) {
+    candidates.push({ label: secretaryType, secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseCandidateResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps, provisionalEqIds: baseProvisionalEqIds, excludedShipProvisionalEqIds });
+  }
+
+  // 同じスロット構成の艦をグループ化する（slotMapのJSON文字列をキーに1回だけ照合）。
+  // 確定overrideの艦と暫定overrideの艦が偶然同じ構成になっても混ざらないよう、暫定差分もキーに含める
+  const candidateByGroupKey = new Map<string, Candidate>();
+  for (const { shipId, modified, modResult, provisionalEqIds } of shipComputations) {
+    const ship = shipById.get(shipId);
+    if (!ship || !modResult) continue;
+    if (!allTargetsAvailable(modified, resources, targets)) continue;
+
+    if (!baseCandidateResult || isBetterResult(modResult, baseCandidateResult)) {
+      const groupKey = `${JSON.stringify(modResult.slotMap)}|${provisionalEqIds.join(",")}`;
+      const existing = candidateByGroupKey.get(groupKey);
+      if (existing) {
+        existing.shipIds.push(shipId);
+      } else {
+        const candidate = { label: ship.name, secretaryType, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps: {}, provisionalEqIds, excludedShipProvisionalEqIds: {} };
+        candidates.push(candidate);
+        candidateByGroupKey.set(groupKey, candidate);
+      }
+    }
+  }
+}
+
 // 秘書艦種×テーブル12通りを全探索し、候補レシピを生成する。各組み合わせで
 // 「艦を指定しないbase候補」と「艦別overrideで結果がbaseより良くなる艦の候補」を作り、
 // 期待資材消費の昇順でソートして返す
@@ -325,83 +388,31 @@ export function calcOptimal(
           ? provisionalDiffIds(fullSlots, applyOverrides(baseSlots, confirmedOverrides, resources, shipId), resources, equipmentById, hqLevel)
           : [];
 
+      // resourcesに依存しないため、「鋼燃」の鋼材優先・燃料優先2パターン探索でも1回で済ませる
+      const shipIdsWithOverride = [
+        ...new Set(
+          relevantOverrides
+            .filter((o) => o.shipIds.length > 0)
+            .flatMap((o) => o.shipIds)
+        ),
+      ].sort((a, b) => {
+        const rootDiff = Number(afterIdTargets.has(a)) - Number(afterIdTargets.has(b));
+        if (rootDiff !== 0) return rootDiff;
+        const sa = shipById.get(a);
+        const sb = shipById.get(b);
+        return (sa?.sortId ?? a) - (sb?.sortId ?? b);
+      });
+
       // 「鋼燃」テーブルの場合は鋼材優先・燃料優先の両パターンを試す（同一なら1件に絞る）
       const resourcesPatterns = table === "鋼燃"
         ? steelFuelPatterns(baseMinReq)
         : [adjustForTable(baseMinReq, table)];
 
       for (const resources of resourcesPatterns) {
-        const baseModifiedSlots = applyOverrides(baseSlots, relevantOverrides, resources, null);
-        const baseProvisionalEqIds = provisionalIdsFor(baseModifiedSlots, resources, null);
-
-        const shipIdsWithOverride = [
-          ...new Set(
-            relevantOverrides
-              .filter((o) => o.shipIds.length > 0)
-              .flatMap((o) => o.shipIds)
-          ),
-        ].sort((a, b) => {
-          const rootDiff = Number(afterIdTargets.has(a)) - Number(afterIdTargets.has(b));
-          if (rootDiff !== 0) return rootDiff;
-          const sa = shipById.get(a);
-          const sb = shipById.get(b);
-          return (sa?.sortId ?? a) - (sb?.sortId ?? b);
-        });
-
-        const baseResult = calcResult(baseModifiedSlots, resources, targets, equipmentById, hqLevel);
-
-        // 艦ごとのoverride適用結果を1回だけ計算し、除外艦判定・独自候補への昇格判定の両方で使い回す。
-        // provisionalEqIds は「暫定込み」と「確定のみ」の構成差分（＝暫定が数値を動かした装備）
-        const shipComputations = shipIdsWithOverride.map((shipId) => {
-          const modified = applyOverrides(baseSlots, relevantOverrides, resources, shipId);
-          const modResult = calcResult(modified, resources, targets, equipmentById, hqLevel);
-          return { shipId, modified, modResult, provisionalEqIds: provisionalIdsFor(modified, resources, shipId) };
-        });
-
-        // 除外すべき艦を収集する: overrideで結果がbaseより悪化する艦、または合計成功率は
-        // 同じでも選択装備の一部が開発不可になる艦（別の選択装備へ付け替わり相殺されるケース）
-        const excludedShipComputations = shipComputations.filter(({ modified, modResult }) => {
-          if (!baseResult) return false;
-          if (!modResult) return true;
-          return isWorseResult(modResult, baseResult) || dropsAnyTarget(baseModifiedSlots, modified, resources, targets);
-        });
-        const excludedShipIds = excludedShipComputations.map(({ shipId }) => shipId);
-        const excludedShipSlotMaps = Object.fromEntries(
-          excludedShipComputations.map(({ shipId, modified }) => [shipId, modified])
+        pushCandidatesForResources(
+          candidates, secretaryType, table, resources, baseSlots, relevantOverrides,
+          shipIdsWithOverride, provisionalIdsFor, targets, shipById, equipmentById, hqLevel
         );
-        const excludedShipProvisionalEqIds = Object.fromEntries(
-          excludedShipComputations.map(({ shipId, provisionalEqIds }) => [shipId, provisionalEqIds])
-        );
-
-        // base（艦指定なし）が対象を全て開発できるなら昇格判定の基準にする。無効（対象不足＝
-        // 艦別overrideでしか出ない装備を含む等）なら null とし、対象が揃う艦候補を base と同等でも
-        // 常に採用する（唯一の成立レシピを取りこぼさない）
-        const baseCandidateResult =
-          baseResult && allTargetsAvailable(baseModifiedSlots, resources, targets) ? baseResult : null;
-        if (baseCandidateResult) {
-          candidates.push({ label: secretaryType, secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseCandidateResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps, provisionalEqIds: baseProvisionalEqIds, excludedShipProvisionalEqIds });
-        }
-
-        // 同じスロット構成の艦をグループ化する（slotMapのJSON文字列をキーに1回だけ照合）。
-        // 確定overrideの艦と暫定overrideの艦が偶然同じ構成になっても混ざらないよう、暫定差分もキーに含める
-        const candidateByGroupKey = new Map<string, Candidate>();
-        for (const { shipId, modified, modResult, provisionalEqIds } of shipComputations) {
-          const ship = shipById.get(shipId);
-          if (!ship || !modResult) continue;
-          if (!allTargetsAvailable(modified, resources, targets)) continue;
-
-          if (!baseCandidateResult || isBetterResult(modResult, baseCandidateResult)) {
-            const groupKey = `${JSON.stringify(modResult.slotMap)}|${provisionalEqIds.join(",")}`;
-            const existing = candidateByGroupKey.get(groupKey);
-            if (existing) {
-              existing.shipIds.push(shipId);
-            } else {
-              const candidate = { label: ship.name, secretaryType, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps: {}, provisionalEqIds, excludedShipProvisionalEqIds: {} };
-              candidates.push(candidate);
-              candidateByGroupKey.set(groupKey, candidate);
-            }
-          }
-        }
       }
     }
   }
