@@ -194,7 +194,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
     return () => document.removeEventListener("mousedown", onOutsideClick);
   }, [selectedExcludedGroup]);
 
-  const { label, shipIds, excludedShipIds, table, resources, result, baseSlotMap, excludedShipSlotMaps, provisionalEqIds, excludedShipProvisionalEqIds } = candidate;
+  const { label, secretaryType, shipIds, excludedShipIds, table, resources, result, baseSlotMap, excludedShipSlotMaps, provisionalEqIds, excludedShipProvisionalEqIds } = candidate;
   // provisionalEqIds が空でなければ暫定データがこの候補の数値に影響している
   const hasProvisional = provisionalEqIds.length > 0;
   const { expectedCost, failRate, successRate, slotMap } = result;
@@ -275,7 +275,9 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
             )}
           </div>
         )}
-        <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>/ {TABLE_LABELS[table] ?? table}テーブル</span>
+        <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+          {shipIds.length > 0 && `/ ${secretaryType} `}/ {TABLE_LABELS[table] ?? table}テーブル
+        </span>
         {excludedShipIds.length > 0 && (
           <div style={{ position: "relative", marginLeft: "auto" }}>
             <button

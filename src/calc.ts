@@ -379,7 +379,7 @@ export function calcOptimal(
         const baseCandidateResult =
           baseResult && allTargetsAvailable(baseModifiedSlots, resources, targets) ? baseResult : null;
         if (baseCandidateResult) {
-          candidates.push({ label: secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseCandidateResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps, provisionalEqIds: baseProvisionalEqIds, excludedShipProvisionalEqIds });
+          candidates.push({ label: secretaryType, secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseCandidateResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps, provisionalEqIds: baseProvisionalEqIds, excludedShipProvisionalEqIds });
         }
 
         // 同じスロット構成の艦をグループ化する（slotMapのJSON文字列をキーに1回だけ照合）。
@@ -396,7 +396,7 @@ export function calcOptimal(
             if (existing) {
               existing.shipIds.push(shipId);
             } else {
-              const candidate = { label: ship.name, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps: {}, provisionalEqIds, excludedShipProvisionalEqIds: {} };
+              const candidate = { label: ship.name, secretaryType, shipIds: [shipId], excludedShipIds: [], table, resources, result: modResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps: {}, provisionalEqIds, excludedShipProvisionalEqIds: {} };
               candidates.push(candidate);
               candidateByGroupKey.set(groupKey, candidate);
             }

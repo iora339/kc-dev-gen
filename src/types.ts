@@ -91,6 +91,8 @@ export interface CalcResult {
 export interface Candidate {
   // 表示ラベル。艦別overrideなしなら秘書艦種名、ありなら代表艦名
   label: string;
+  // このレシピの秘書艦種。艦別override候補（shipIds非空）では label と別に表示するため保持する
+  secretaryType: SecretaryType;
   // このレシピが有効な秘書艦のID一覧（空ならその秘書艦種の任意の艦でよい）
   shipIds: number[];
   // overrideの適用でむしろ結果が悪化するため秘書艦から除外すべき艦のID一覧
