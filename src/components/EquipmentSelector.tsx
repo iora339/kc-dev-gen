@@ -87,13 +87,14 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
         </button>
       </div>
       <div style={{
-        display: "flex", flexDirection: "column", gap: 10,
+        // カテゴリ間の余白は区切り線のmargin(8px)のみで取り、線の上下を等間隔にする
+        display: "flex", flexDirection: "column",
         height: isSingleColumn ? 400 : "50vh", minHeight: 120, maxHeight: "80vh", overflowY: "auto", resize: "vertical",
         border: "0.5px solid var(--border)", borderRadius: 12, padding: 14,
       }}>
         {visible.map((cat, i) => (
           <div key={cat.label}>
-            {i > 0 && <div style={{ borderTop: "0.5px solid var(--border)", margin: "6px 0" }} />}
+            {i > 0 && <div style={{ borderTop: "0.5px solid var(--border)", margin: "8px 0" }} />}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {cat.items.map((eq) => {
                 const selected = selectedIds.includes(eq.id);

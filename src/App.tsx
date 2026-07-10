@@ -231,12 +231,12 @@ export default function App() {
                 </span>
                 {showPendingInfo && (
                   <div style={popupStyle({ top: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", width: 380, lineHeight: 1.7, color: "var(--text-primary)", whiteSpace: "normal" })}>
-                    検証データが不足していますが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>（2026-7-4時点）を元に暫定の開発率データを作成しました。チェックすると以下が計算に含まれ、<span style={{ display: "inline-block", color: "var(--text-warning)" }}>⚠︎</span>マークが表示されるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
+                    検証データが不足していますが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>（2026-7-10時点）を元に暫定の開発率データを作成しました。チェックすると以下が計算に含まれ、<span style={{ display: "inline-block", color: "var(--text-warning)" }}>⚠︎</span>マークが表示されるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
                     <table style={{ borderCollapse: "collapse", marginTop: 8, width: "100%", fontSize: 12, lineHeight: 1.5, tableLayout: "fixed" }}>
                       <thead>
                         <tr>
-                          {([["秘書艦", 96], ["テーブル", 48], ["装備", undefined], ["増減", 40]] as const).map(([h, w]) => (
-                            <th key={h} style={{ width: w, textAlign: "left", color: "var(--text-muted)", fontWeight: 400, padding: "2px 6px", borderBottom: "0.5px solid var(--border-strong)" }}>{h}</th>
+                          {([["秘書艦", 96], ["テーブル", 58], ["装備", undefined], ["増減", 40]] as const).map(([h, w]) => (
+                            <th key={h} style={{ width: w, textAlign: "left", color: "var(--text-muted)", fontWeight: 400, padding: "2px 6px", borderBottom: "0.5px solid var(--border-strong)", whiteSpace: "nowrap" }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -301,7 +301,7 @@ export default function App() {
         <p style={{ margin: 0, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
           <a href="https://github.com/iora339/kc-dev-gen" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>GitHub</a>
           <span style={{ color: "var(--text-muted)" }}>/</span>
-          <span>v0.4.0</span>
+          <span>v0.4.1</span>
         </p>
       </footer>
     </div>
