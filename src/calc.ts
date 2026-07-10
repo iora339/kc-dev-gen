@@ -268,6 +268,26 @@ export function isCombinable(
   return false;
 }
 
+// 表示上区別できない候補を同一視するためのグループ化キー。開発不可装備は表示にも
+// 失敗率の内訳にも現れないため、開発可能装備のみのスロット構成＋失敗スロット数で表す。
+// 確定overrideの艦と暫定overrideの艦が偶然同じ構成になっても混ざらないよう、暫定差分も含める
+function candidateGroupKey(
+  result: CalcResult,
+  provisionalEqIds: number[],
+  resources: Resources,
+  equipmentById: Map<number, Equipment>,
+  hqLevel: number
+): string {
+  const developableSlots = Object.entries(result.slotMap)
+    .filter(([id, slots]) => {
+      const eq = equipmentById.get(Number(id));
+      return slots > 0 && !!eq && canDevelop(eq, resources, hqLevel);
+    })
+    .map(([id, slots]) => `${id}:${slots}`)
+    .join(",");
+  return `${developableSlots}|${result.failSlots}|${provisionalEqIds.join(",")}`;
+}
+
 // 秘書艦種×テーブル×投入資源1パターン分の候補を計算し、baseおよび艦別override候補をcandidatesに追加する。
 // 「鋼燃」テーブルの鋼材優先・燃料優先パターン探索で1組み合わせにつき最大2回呼ばれる
 function pushCandidatesForResources(
@@ -320,8 +340,7 @@ function pushCandidatesForResources(
     candidates.push({ label: secretaryType, secretaryType, shipIds: [], excludedShipIds, table, resources, result: baseCandidateResult, baseSlotMap: baseModifiedSlots, excludedShipSlotMaps, provisionalEqIds: baseProvisionalEqIds, excludedShipProvisionalEqIds });
   }
 
-  // 同じスロット構成の艦をグループ化する（slotMapのJSON文字列をキーに1回だけ照合）。
-  // 確定overrideの艦と暫定overrideの艦が偶然同じ構成になっても混ざらないよう、暫定差分もキーに含める
+  // 表示上区別できない艦を candidateGroupKey でグループ化する
   const candidateByGroupKey = new Map<string, Candidate>();
   for (const { shipId, modified, modResult, provisionalEqIds } of shipComputations) {
     const ship = shipById.get(shipId);
@@ -329,7 +348,7 @@ function pushCandidatesForResources(
     if (!allTargetsAvailable(modified, resources, targets)) continue;
 
     if (!baseCandidateResult || isBetterResult(modResult, baseCandidateResult)) {
-      const groupKey = `${JSON.stringify(modResult.slotMap)}|${provisionalEqIds.join(",")}`;
+      const groupKey = candidateGroupKey(modResult, provisionalEqIds, resources, equipmentById, hqLevel);
       const existing = candidateByGroupKey.get(groupKey);
       if (existing) {
         existing.shipIds.push(shipId);
