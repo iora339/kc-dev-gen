@@ -27,11 +27,11 @@ npm run dev       # Vite dev server（デフォルト http://localhost:5173）
 
 ## データ生成（`data/*.csv` → `public/*.json`）
 
-アプリは `public/*.json` を fetch して動作します。ソースは `data/` 配下の CSV と、艦これゲームサーバーから取得した master JSON（リポジトリには含まれません）です。変換は手動でスクリプトを実行します。
+アプリは `public/*.json` を fetch して動作します。ソースは `data/` 配下の CSV と、艦これログイン時のapi_start2/getDataのレスポンスJSON（リポジトリには含まれません）です。変換は手動でスクリプトを実行します。
 
 | スクリプト | 入力 | 出力 |
 | --- | --- | --- |
-| `scripts/convert-master.js` | `<path/to/master.json>` | `public/equipment.json`, `public/equipment-type.json`, `public/ship-type.json`, `public/ships.json` |
+| `scripts/convert-master.js` | `<path/to/api_start2/getDataのレスポンスJSON>` | `public/equipment.json`, `public/equipment-type.json`, `public/ship-type.json`, `public/ships.json` |
 | `scripts/convert-dev-table.js` | `data/dev-table.csv` | `public/dev-table.json` |
 | `scripts/convert-overrides.js` | `data/overrides-ship.csv`, `data/overrides-ship-pending.csv`, `data/overrides-resource.csv` | `public/overrides.json`, `public/overrides-pending.json` |
 

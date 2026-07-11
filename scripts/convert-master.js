@@ -6,7 +6,9 @@ if (!src) {
   process.exit(1);
 }
 
-const raw = JSON.parse(readFileSync(src, "utf-8"));
+const text = readFileSync(src, "utf-8").replace(/^﻿/, "").trim();
+const json = JSON.parse(text.replace(/^svdata=/, ""));
+const raw = json.api_data ?? json;
 const items = raw.api_mst_slotitem;
 
 const equipment = items
