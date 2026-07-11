@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Candidate, Equipment, Ship, ShipType, SlotMap } from "../types";
 import { canDevelop } from "../calc";
 import { popupStyle, popupHeadingStyle } from "./popup";
@@ -62,6 +62,23 @@ function ProvisionalBadge() {
     <span title="暫定検証データによる補正" style={{ display: "inline-block", color: "var(--text-warning)", cursor: "help", marginLeft: 3 }}>
       {"⚠︎"}
     </span>
+  );
+}
+
+// 「投入資源」「対象開発率」等の小見出しラベル。狭い画面でもラベルの途中では折り返さない
+const statLabelStyle: CSSProperties = { fontSize: 12, color: "var(--text-muted)", marginBottom: 3, whiteSpace: "nowrap" };
+
+// 対象開発率・開発失敗率の表示セル。クリックでその項目の降順ソートに切り替える
+function RateStat({ label, rate, color, active, onClick }: { label: string; rate: number; color: string; active: boolean; onClick: () => void }) {
+  return (
+    <div>
+      <div style={statLabelStyle}>{label}</div>
+      <div
+        onClick={onClick}
+        title="クリックでこの項目の降順に並び替え"
+        style={{ display: "inline-block", fontSize: 14, fontWeight: active ? 700 : 500, color, cursor: "pointer", textDecoration: active ? "underline" : "none" }}
+      >{(rate * 100).toFixed(1)}%</div>
+    </div>
   );
 }
 
@@ -257,8 +274,9 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
 
   return (
     <div style={{ background: "var(--surface-2)", border: "0.5px solid var(--border)", borderRadius: 12, padding: "1.25rem 1.5rem", position: "relative" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <span style={{ fontSize: 16, fontWeight: 500 }}>{label}{hasProvisional && <ProvisionalBadge />}</span>
+      {/* 狭い画面では艦名・テーブル名の途中で折れないよう、要素単位で行を折り返す */}
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+        <span style={{ fontSize: 16, fontWeight: 500, whiteSpace: "nowrap" }}>{label}{hasProvisional && <ProvisionalBadge />}</span>
         {otherCount > 0 && (
           <div style={{ position: "relative" }}>
             <button
@@ -275,7 +293,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
             )}
           </div>
         )}
-        <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+        <span style={{ fontSize: 13, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
           {shipIds.length > 0 && `/ ${secretaryType} `}/ {TABLE_LABELS[table] ?? table}テーブル
         </span>
         {excludedShipIds.length > 0 && (
@@ -318,28 +336,15 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
       </div>
 
       <div style={{ background: "var(--surface-1)", borderRadius: "var(--radius)", padding: "8px 12px", marginBottom: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        {/* 狭い画面ではラベルや資源トークンの途中で折れないよう、要素単位で行を折り返す */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "4px 16px" }}>
           <div>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 3 }}>投入資源</div>
-            <div style={{ fontSize: 14 }}>燃{resources.fuel} 弾{resources.ammo} 鋼{resources.steel} ボ{resources.bauxite}</div>
+            <div style={statLabelStyle}>投入資源</div>
+            <div style={{ fontSize: 14, wordBreak: "keep-all" }}>燃{resources.fuel} 弾{resources.ammo} 鋼{resources.steel} ボ{resources.bauxite}</div>
           </div>
           <div style={{ display: "flex", gap: 20, textAlign: "right" }}>
-            <div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 3 }}>対象開発率</div>
-              <div
-                onClick={() => onSortChange("successRate")}
-                title="クリックでこの項目の降順に並び替え"
-                style={{ display: "inline-block", fontSize: 14, fontWeight: sortKey === "successRate" ? 700 : 500, color: "var(--text-success)", cursor: "pointer", textDecoration: sortKey === "successRate" ? "underline" : "none" }}
-              >{(successRate * 100).toFixed(1)}%</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 3 }}>開発失敗率</div>
-              <div
-                onClick={() => onSortChange("failRate")}
-                title="クリックでこの項目の降順に並び替え"
-                style={{ display: "inline-block", fontSize: 14, fontWeight: sortKey === "failRate" ? 700 : 500, color: "var(--text-danger)", cursor: "pointer", textDecoration: sortKey === "failRate" ? "underline" : "none" }}
-              >{(failRate * 100).toFixed(1)}%</div>
-            </div>
+            <RateStat label="対象開発率" rate={successRate} color="var(--text-success)" active={sortKey === "successRate"} onClick={() => onSortChange("successRate")} />
+            <RateStat label="開発失敗率" rate={failRate} color="var(--text-danger)" active={sortKey === "failRate"} onClick={() => onSortChange("failRate")} />
           </div>
         </div>
       </div>
@@ -424,6 +429,7 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
                 fontWeight: sortKey === key || isMin ? 700 : 400,
                 textDecoration: sortKey === key ? "underline" : "none",
                 marginLeft: i > 0 ? 6 : 0,
+                whiteSpace: "nowrap",
               }}
             >
               {label}{text}

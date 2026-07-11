@@ -94,3 +94,14 @@ button {
     max-width: none;
   }
 }
+
+/* アプリ全体の外周余白。スマホ幅ではカード内の実効幅を確保するため縮める */
+.app-container {
+  padding: 2rem;
+}
+
+@media (max-width: 480px) {
+  .app-container {
+    padding: 1rem;
+  }
+}

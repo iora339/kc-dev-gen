@@ -1,8 +1,9 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, type CSSProperties, type RefObject } from "react";
 import { useData } from "./useData";
 import { calcOptimal, isCombinable, groupOverridesByKey } from "./calc";
 import type { Candidate, Equipment, Ship } from "./types";
 import { EquipmentSelector } from "./components/EquipmentSelector";
+import { useIsSingleColumn } from "./hooks/useIsSingleColumn";
 import { TYPE_COLORS, DEFAULT_COLOR } from "./components/typeColors";
 import { ResultCard, type CostSortKey, type SortKey } from "./components/ResultCard";
 import { popupStyle } from "./components/popup";
@@ -28,6 +29,21 @@ const EQUIPMENT_CATEGORIES: { label: string; typeIds: number[] }[] = [
   { label: "その他", typeIds: [] },
 ];
 
+// 暫定データポップアップの横位置。通常はアンカー中央揃え、480px以下ではそれだと画面右に
+// はみ出すため画面左端16px基準に切り替える（ポップアップ幅 min(380px, 100vw-32px) と対で機能する）。
+// 狭幅時のオフセットはrender中にrefを読めないため、ポップアップを開くクリック時に measure() で測定する
+function usePendingPopupPosition(anchorRef: RefObject<HTMLSpanElement | null>): { position: CSSProperties; measure: () => void } {
+  const isNarrow = useIsSingleColumn(480);
+  const [narrowLeft, setNarrowLeft] = useState(0);
+  const measure = () => {
+    if (anchorRef.current) setNarrowLeft(16 - anchorRef.current.getBoundingClientRect().left);
+  };
+  const position: CSSProperties = isNarrow
+    ? { left: narrowLeft }
+    : { left: "50%", transform: "translateX(-50%)" };
+  return { position, measure };
+}
+
 export default function App() {
   const { data, error } = useData();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -36,6 +52,7 @@ export default function App() {
   const [usePendingData, setUsePendingData] = useState(false);
   const [showPendingInfo, setShowPendingInfo] = useState(false);
   const pendingInfoRef = useRef<HTMLSpanElement>(null);
+  const pendingPopup = usePendingPopupPosition(pendingInfoRef);
 
   // 暫定データの説明ポップアップは外側クリックで閉じる
   useEffect(() => {
@@ -163,7 +180,7 @@ export default function App() {
     : candidates;
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "var(--font-sans)", maxWidth: 1200, margin: "0 auto", minHeight: "100vh", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+    <div className="app-container" style={{ fontFamily: "var(--font-sans)", maxWidth: 1200, margin: "0 auto", minHeight: "100vh", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
       <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 1.5rem" }}>艦これ　開発レシピ検索ツール</h1>
       <div className="main-grid" style={{ display: "grid", gap: "2rem", alignItems: "start" }}>
         <div>
@@ -224,13 +241,16 @@ export default function App() {
                   style={{ cursor: "pointer" }}
                 />
                 <span
-                  onClick={() => setShowPendingInfo((v) => !v)}
+                  onClick={() => {
+                    pendingPopup.measure();
+                    setShowPendingInfo((v) => !v);
+                  }}
                   style={{ fontSize: 14, color: "var(--text-secondary)", cursor: "pointer", textDecoration: "underline dotted" }}
                 >
                   暫定データを使用
                 </span>
                 {showPendingInfo && (
-                  <div style={popupStyle({ top: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)", width: 380, lineHeight: 1.7, color: "var(--text-primary)", whiteSpace: "normal" })}>
+                  <div style={popupStyle({ top: "calc(100% + 4px)", ...pendingPopup.position, width: "min(380px, calc(100vw - 32px))", lineHeight: 1.7, color: "var(--text-primary)", whiteSpace: "normal" })}>
                     検証データが不足していますが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>（2026-7-10時点）を元に暫定の開発率データを作成しました。チェックすると以下が計算に含まれ、<span style={{ display: "inline-block", color: "var(--text-warning)" }}>⚠︎</span>マークが表示されるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
                     <table style={{ borderCollapse: "collapse", marginTop: 8, width: "100%", fontSize: 12, lineHeight: 1.5, tableLayout: "fixed" }}>
                       <thead>
