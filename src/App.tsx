@@ -19,7 +19,7 @@ const EQUIPMENT_CATEGORIES: { label: string; typeIds: number[] }[] = [
   { label: "艦戦", typeIds: [6] },
   { label: "艦爆", typeIds: [7] },
   { label: "艦攻", typeIds: [8] },
-  { label: "艦偵", typeIds: [9, 94] },
+  { label: "他艦載機", typeIds: [9, 94, 25, 26] },
   { label: "水上機", typeIds: [10, 11, 41, 45] },
   { label: "電探", typeIds: [12, 13, 93] },
   { label: "対潜", typeIds: [14, 15, 40] },
@@ -321,7 +321,7 @@ export default function App() {
         <p style={{ margin: 0, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
           <a href="https://github.com/iora339/kc-dev-gen" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>GitHub</a>
           <span style={{ color: "var(--text-muted)" }}>/</span>
-          <span>v0.4.1</span>
+          <span>v0.4.2</span>
         </p>
       </footer>
     </div>
