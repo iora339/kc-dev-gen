@@ -215,6 +215,13 @@ function dropsAnyTarget(base: SlotMap, slots: SlotMap, resources: Resources, tar
   return targets.some((eq) => isTargetAvailable(base, resources, eq) && !isTargetAvailable(slots, resources, eq));
 }
 
+// 選択装備ごとのスロット数がbaseと異なるか。選択装備同士の間で率が付け替わるoverride
+// （例: 大和の15.2cm単装砲→46cm三連装砲）は合計成功率がbaseと同じになるが、
+// 内訳が違う以上baseカードの表示は当てはまらないため、独自候補への昇格対象にする
+function targetSlotsDiffer(base: SlotMap, slots: SlotMap, targets: Equipment[]): boolean {
+  return targets.some((eq) => (base[eq.id] || 0) !== (slots[eq.id] || 0));
+}
+
 // 全テーブル共通の最低投入資源を求める:
 // 「開発の最低投入量(各10)」「選択装備の必要資源」「資源条件のみ(shipIds空)で
 // 選択装備に付け替わるoverrideの発動条件」の3者の最大値
@@ -347,7 +354,12 @@ function pushCandidatesForResources(
     if (!ship || !modResult) continue;
     if (!allTargetsAvailable(modified, resources, targets)) continue;
 
-    if (!baseCandidateResult || isBetterResult(modResult, baseCandidateResult)) {
+    // baseより結果が良い艦に加え、合計は同じでも選択装備の内訳が異なる艦（除外艦は除く）も独自候補にする
+    if (
+      !baseCandidateResult ||
+      isBetterResult(modResult, baseCandidateResult) ||
+      (!excludedShipIds.includes(shipId) && targetSlotsDiffer(baseModifiedSlots, modified, targets))
+    ) {
       const groupKey = candidateGroupKey(modResult, provisionalEqIds, resources, equipmentById, hqLevel);
       const existing = candidateByGroupKey.get(groupKey);
       if (existing) {
