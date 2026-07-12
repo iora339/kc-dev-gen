@@ -1,10 +1,12 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Candidate, Equipment, Ship, ShipType, SlotMap } from "../types";
-import { canDevelop } from "../calc";
+import { canDevelop, equipmentExpectedNail } from "../calc";
 import { popupStyle, popupHeadingStyle } from "./popup";
 
 export type CostSortKey = "fuel" | "ammo" | "steel" | "bauxite" | "devmat";
-export type SortKey = CostSortKey | "successRate" | "failRate";
+// 装備別の釘期待値ソート用キー。装備IDを埋め込み、装備ごとに独立した昇順ソートを可能にする
+export type EquipmentSortKey = `nail-${number}`;
+export type SortKey = CostSortKey | "successRate" | "failRate" | EquipmentSortKey;
 
 // 複数のslotMapに登場する装備IDの和集合を返す（増減比較の対象を漏れなく拾うため）
 function unionSlotIds(...maps: SlotMap[]): number[] {
@@ -390,10 +392,13 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
             )}
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto", alignItems: "center", columnGap: 8, rowGap: 7 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto auto", alignItems: "center", columnGap: 8, rowGap: 7 }}>
           {targets.map((eq) => {
             const slots = slotMap[eq.id] || 0;
             const pct = slots / 50 * 100;
+            const nailExpected = equipmentExpectedNail(result, eq.id);
+            const nailKey: EquipmentSortKey = `nail-${eq.id}`;
+            const nailActive = sortKey === nailKey;
             return (
               <Fragment key={eq.id}>
                 <span style={{ fontSize: 13, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{eq.name}{provisionalEqIdSet.has(eq.id) && <ProvisionalBadge />}</span>
@@ -401,6 +406,22 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
                   <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", background: "var(--fill-accent)" }} />
                 </div>
                 <span style={{ fontSize: 13, minWidth: 32, textAlign: "right" }}>{pct.toFixed(0)}%</span>
+                <span
+                  onClick={() => onSortChange(nailKey)}
+                  title="クリックでこの装備の釘期待値昇順に並び替え"
+                  style={{
+                    fontSize: 12,
+                    minWidth: 56,
+                    textAlign: "right",
+                    whiteSpace: "nowrap",
+                    cursor: "pointer",
+                    color: nailActive ? "var(--text-accent)" : "var(--text-muted)",
+                    fontWeight: nailActive ? 700 : 400,
+                    textDecoration: nailActive ? "underline" : "none",
+                  }}
+                >
+                  {Number.isFinite(nailExpected) ? `釘${nailExpected.toFixed(2)}` : "-"}
+                </span>
               </Fragment>
             );
           })}
@@ -408,13 +429,13 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
       </div>
 
       <div style={{ borderTop: "0.5px solid var(--border)", paddingTop: 10, fontSize: 13, color: "var(--text-secondary)" }}>
-        期待消費：
+        消費期待値：
         {([
           ["fuel", "燃", expectedCost.fuel, expectedCost.fuel.toFixed(0)],
           ["ammo", "弾", expectedCost.ammo, expectedCost.ammo.toFixed(0)],
           ["steel", "鋼", expectedCost.steel, expectedCost.steel.toFixed(0)],
           ["bauxite", "ボ", expectedCost.bauxite, expectedCost.bauxite.toFixed(0)],
-          ["devmat", "資材", expectedCost.devmat, expectedCost.devmat.toFixed(2)],
+          ["devmat", "釘", expectedCost.devmat, expectedCost.devmat.toFixed(2)],
         ] as const).map(([key, label, rawValue, text], i) => {
           // 全候補中の最小値は太字で強調する
           const isMin = minCosts !== null && rawValue === minCosts[key];

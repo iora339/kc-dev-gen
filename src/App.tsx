@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, type CSSProperties, type RefObject } from "react";
 import { useData } from "./useData";
-import { calcOptimal, isCombinable, groupOverridesByKey } from "./calc";
+import { calcOptimal, isCombinable, groupOverridesByKey, equipmentExpectedNail } from "./calc";
 import type { Candidate, Equipment, Ship } from "./types";
 import { EquipmentSelector } from "./components/EquipmentSelector";
 import { useIsSingleColumn } from "./hooks/useIsSingleColumn";
@@ -157,10 +157,14 @@ export default function App() {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+    // 装備別釘ソート("nail-<装備ID>")の対象装備を選択解除したら既定の資材ソートに戻す
+    // （"nail-<id>"がsortKeyになり得るのはidが選択中の間だけなので、一致すれば必ず解除操作）
+    setSortKey((prev) => (prev === `nail-${id}` ? "devmat" : prev));
   }
 
   function clearEquip() {
     setSelectedIds([]);
+    setSortKey((prev) => (prev.startsWith("nail-") ? "devmat" : prev));
   }
 
   if (error) return <div style={{ padding: "2rem", color: "var(--text-danger)" }}>{error}</div>;
@@ -171,12 +175,20 @@ export default function App() {
     return eq ? [eq] : [];
   });
 
-  // 開発率系(対象開発率・開発失敗率)は高いほど望ましいため降順、コスト系は昇順で並べる
+  // 開発率系(対象開発率・開発失敗率)は高いほど望ましいため降順、コスト系は昇順で並べる。
+  // "nail-<装備ID>" は装備単体を狙った場合の期待釘消費（昇順）でのソート
   const displayedCandidates = candidates
-    ? [...candidates].sort((a, b) =>
-        sortKey === "successRate" ? b.result.successRate - a.result.successRate
-        : sortKey === "failRate" ? b.result.failRate - a.result.failRate
-        : a.result.expectedCost[sortKey] - b.result.expectedCost[sortKey])
+    ? [...candidates].sort((a, b) => {
+        if (sortKey === "successRate") return b.result.successRate - a.result.successRate;
+        if (sortKey === "failRate") return b.result.failRate - a.result.failRate;
+        if (sortKey.startsWith("nail-")) {
+          const eqId = Number(sortKey.slice("nail-".length));
+          return equipmentExpectedNail(a.result, eqId) - equipmentExpectedNail(b.result, eqId);
+        }
+        // ここまでで successRate/failRate/nail-* は分岐済みのため、残りは CostSortKey のみ
+        const costKey = sortKey as CostSortKey;
+        return a.result.expectedCost[costKey] - b.result.expectedCost[costKey];
+      })
     : candidates;
 
   return (

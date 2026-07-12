@@ -158,6 +158,14 @@ function allTargetsAvailable(
   return targets.every((eq) => isTargetAvailable(slots, resources, eq));
 }
 
+// 対象装備1件を単体で狙った場合の期待釘(開発資材)消費。全体のdevmatは選択装備合算の成功率で
+// 割っているため、単体狙いではこちらの値を使う。スロットが無ければ Infinity（ソート時に末尾へ）
+export function equipmentExpectedNail(result: CalcResult, eqId: number): number {
+  const slots = result.slotMap[eqId] || 0;
+  if (slots <= 0) return Infinity;
+  return (1 - result.failRate) / (slots / 50);
+}
+
 // スロット構成と投入資源から対象開発率・開発失敗率・期待消費資源を算出する。
 // 対象装備のスロットが1つも無い構成は候補になり得ないため null を返す
 function calcResult(
