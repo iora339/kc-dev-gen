@@ -69,7 +69,7 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
 
   return (
     <div>
-      <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 10px" }}>装備を選択</p>
+      <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 10px" }}>以下から装備を選択すると最適な開発レシピを検索します。複数選択も可能です。</p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
         <button onClick={() => setActiveCats(new Set())} style={tabStyle(allActive)}>
           全て
