@@ -29,6 +29,18 @@ const EQUIPMENT_CATEGORIES: { label: string; typeIds: number[] }[] = [
   { label: "その他", typeIds: [] },
 ];
 
+// 現在のソート基準を「結果 N件」の横に表示するためのラベル
+function sortKeyLabel(sortKey: SortKey, equipmentById: Map<number, Equipment>): string {
+  if (sortKey === "successRate") return "対象開発率が高い順";
+  if (sortKey === "failRate") return "開発失敗率が高い順";
+  if (sortKey.startsWith("nail-")) {
+    const name = equipmentById.get(Number(sortKey.slice("nail-".length)))?.name ?? "";
+    return `${name}の釘が少ない順`;
+  }
+  const costLabels: Record<CostSortKey, string> = { fuel: "燃料", ammo: "弾薬", steel: "鋼材", bauxite: "ボーキ", devmat: "釘" };
+  return `${costLabels[sortKey as CostSortKey]}が少ない順`;
+}
+
 // 暫定データポップアップの横位置。通常はアンカー中央揃え、480px以下ではそれだと画面右に
 // はみ出すため画面左端16px基準に切り替える（ポップアップ幅 min(380px, 100vw-32px) と対で機能する）。
 // 狭幅時のオフセットはrender中にrefを読めないため、ポップアップを開くクリック時に measure() で測定する
@@ -302,6 +314,20 @@ export default function App() {
             <>
               <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
                 結果 <span style={{ color: "var(--text-primary)" }}>{candidates?.length ?? 0}件</span>
+                {candidates && candidates.length > 0 && (
+                  // 既定(釘)以外のソート中はクリックで既定に戻せる
+                  sortKey === "devmat" ? (
+                    <span style={{ marginLeft: 6 }}>⇅：{sortKeyLabel(sortKey, equipmentById)}</span>
+                  ) : (
+                    <span
+                      onClick={() => setSortKey("devmat")}
+                      title="クリックで既定の釘ソートに戻す"
+                      style={{ marginLeft: 6, cursor: "pointer", textDecoration: "underline dotted", color: "var(--text-accent)" }}
+                    >
+                      ⇅：{sortKeyLabel(sortKey, equipmentById)}
+                    </span>
+                  )
+                )}
               </p>
               {selectedIds.length === 0 ? null : candidates!.length === 0 ? (
                 <p style={{ fontSize: 13, color: "var(--text-muted)" }}>全装備を同時に開発できるレシピはありません。</p>

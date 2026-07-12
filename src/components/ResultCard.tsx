@@ -439,6 +439,9 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
         ] as const).map(([key, label, rawValue, text], i) => {
           // 全候補中の最小値は太字で強調する
           const isMin = minCosts !== null && rawValue === minCosts[key];
+          // 釘(devmat)は既定のソート基準であり、「結果 N件」欄の見出しで既に示しているため、
+          // アクセントカラー・太字の強調は不要（現在のソート基準を示す下線のみ残す）
+          const isActive = sortKey === key && key !== "devmat";
           return (
             <span
               key={key}
@@ -446,8 +449,8 @@ export function ResultCard({ candidate, targets, ships, shipTypes, equipment, hq
               title="クリックでこの項目の昇順に並び替え"
               style={{
                 cursor: "pointer",
-                color: sortKey === key ? "var(--text-accent)" : "inherit",
-                fontWeight: sortKey === key || isMin ? 700 : 400,
+                color: isActive ? "var(--text-accent)" : "inherit",
+                fontWeight: isActive || isMin ? 700 : 400,
                 textDecoration: sortKey === key ? "underline" : "none",
                 marginLeft: i > 0 ? 6 : 0,
                 whiteSpace: "nowrap",
