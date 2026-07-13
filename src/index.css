@@ -1,11 +1,17 @@
 /*
  * スタイルの方針: レイアウトや個別の見た目は各コンポーネントのインライン style で指定し、
- * このファイルには CSS 変数（配色・フォント等のデザイントークン）とグローバルな要素スタイルのみ置く
+ * このファイルには CSS 変数（配色・フォント等のデザイントークン）とグローバルな要素スタイルのみ置く。
+ * ダークモードは prefers-color-scheme でトークンを差し替えるだけで全体に反映される
+ * （インライン style は var(--…) 参照か、surface/text との color-mix で配色を導出しているため）。
  */
 :root {
   --font-sans: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
 
-  --bg-base: #ffffff;
+  color-scheme: light;
+
+  /* ページ地はカード(白)より一段沈めて、白いカードを浮かせて見せる。
+     色相は内部パネル(surface-1)と揃え、純白カードの隣で黄みが浮かない中立寄りにする */
+  --bg-base: #f3f3f1;
   --surface-1: #f5f5f3;
   --surface-2: #ffffff;
 
@@ -15,10 +21,11 @@
 
   --text-primary: #1a1a18;
   --text-secondary: #555550;
-  --text-muted: #999990;
+  --text-muted: #78776f;
   --text-accent: #3b7de8;
-  --text-success: #2e9e5b;
-  --text-warning: #c07010;
+  /* success は青みのある緑にして、赤緑色覚特性でも danger と区別しやすくする */
+  --text-success: #0f8a58;
+  --text-warning: #b06510;
   --text-danger: #cc3030;
 
   --bg-accent: rgba(80, 140, 230, 0.12);
@@ -29,6 +36,37 @@
   --bg-success-accent: rgba(46, 158, 91, 0.12);
 
   --radius: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    /* ダークではカード(surface-2)を地より明るく、内部パネル(surface-1)はカードより暗く凹ませる
+       （ライトと同じ「ページ≒内部パネル ＜ カード」の階層に揃える） */
+    --bg-base: #141418;
+    --surface-1: #18181d;
+    --surface-2: #1e1e23;
+
+    --border: rgba(255, 255, 255, 0.11);
+    --border-strong: rgba(255, 255, 255, 0.2);
+    --border-accent: rgba(110, 160, 240, 0.5);
+
+    --text-primary: #eceae6;
+    --text-secondary: #a9a89f;
+    --text-muted: #969590;
+    --text-accent: #6ea6f0;
+    /* success は青みのある緑（色覚特性対応の意図はライト側コメント参照） */
+    --text-success: #37c68e;
+    --text-warning: #dca63e;
+    --text-danger: #ef6a6a;
+
+    --bg-accent: rgba(110, 160, 240, 0.16);
+    --fill-accent: #5b90ea;
+
+    --border-success-accent: rgba(78, 194, 126, 0.45);
+    --bg-success-accent: rgba(78, 194, 126, 0.14);
+  }
 }
 
 *, *::before, *::after {
@@ -57,9 +95,15 @@ input[type="number"]:focus {
   border-color: var(--border-accent);
 }
 
+input[type="checkbox"] {
+  accent-color: var(--fill-accent);
+}
+
 button {
   font-family: var(--font-sans);
   cursor: pointer;
+  /* 押下・選択で配色が切り替わる際に滑らかにフェードさせる（シェード） */
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 ::-webkit-scrollbar {

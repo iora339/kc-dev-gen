@@ -61,7 +61,8 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
     return {
       fontSize: 13, padding: "4px 14px", borderRadius: "var(--radius)",
       border: `0.5px solid ${active ? border : "var(--border-strong)"}`,
-      background: active ? bg : "transparent",
+      // 非選択タブは白(surface-2)塗りにして、グレーのページ地から浮かせる（選択時は青系の塗り）
+      background: active ? bg : "var(--surface-2)",
       color: active ? color : "var(--text-secondary)",
       cursor: "pointer",
     };
@@ -69,7 +70,7 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
 
   return (
     <div>
-      <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 10px" }}>以下から装備を選択すると最適な開発レシピを検索します。複数選択も可能です。</p>
+      <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 10px" }}>装備を選択すると最適な開発レシピを検索します。複数選択も可能です。</p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
         <button onClick={() => setActiveCats(new Set())} style={tabStyle(allActive)}>
           全て
@@ -90,7 +91,7 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
         // カテゴリ間の余白は区切り線のmargin(8px)のみで取り、線の上下を等間隔にする
         display: "flex", flexDirection: "column",
         height: isSingleColumn ? 400 : "50vh", minHeight: 120, maxHeight: "80vh", overflowY: "auto", resize: "vertical",
-        border: "0.5px solid var(--border)", borderRadius: 12, padding: 14,
+        background: "var(--surface-2)", border: "0.5px solid var(--border)", borderRadius: 12, padding: 14,
       }}>
         {visible.map((cat, i) => (
           <div key={cat.label}>

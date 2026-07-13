@@ -205,7 +205,7 @@ export default function App() {
 
   return (
     <div className="app-container" style={{ fontFamily: "var(--font-sans)", maxWidth: 1200, margin: "0 auto", minHeight: "100vh", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 1.5rem" }}>艦これ　開発レシピ検索ツール</h1>
+      <h1 style={{ fontSize: 23, fontWeight: 700, letterSpacing: "0.01em", color: "var(--text-primary)", margin: "0 0 1.5rem" }}>艦これ　開発レシピ検索ツール</h1>
       <div className="main-grid" style={{ display: "grid", gap: "2rem", alignItems: "start" }}>
         <div>
           <EquipmentSelector
@@ -217,7 +217,7 @@ export default function App() {
             onToggle={toggleEquip}
           />
           <div style={{ marginTop: 16 }}>
-            <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 10 }}>
+            <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 10, minHeight: 23 }}>
               対象装備 <span style={{ color: "var(--text-accent)" }}>{selectedIds.length}件</span>
               {selectedIds.length > 0 && (
                 <button
@@ -359,7 +359,7 @@ export default function App() {
         <p style={{ margin: 0, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
           <a href="https://github.com/iora339/kc-dev-gen" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>GitHub</a>
           <span style={{ color: "var(--text-muted)" }}>/</span>
-          <span>v0.4.3</span>
+          <span>v0.5.0</span>
         </p>
       </footer>
     </div>
