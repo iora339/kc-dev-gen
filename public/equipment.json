@@ -7421,5 +7421,174 @@
       "steel": 1,
       "bauxite": 1
     }
+  },
+  {
+    "id": 576,
+    "name": "大発動艇(R35&フランス兵)",
+    "rarity": 3,
+    "type": 24,
+    "iconType": 20,
+    "req": {
+      "fuel": 2,
+      "ammo": 2,
+      "steel": 5,
+      "bauxite": 1
+    }
+  },
+  {
+    "id": 577,
+    "name": "61cm四連装(酸素)魚雷五型改三",
+    "rarity": 4,
+    "type": 5,
+    "iconType": 5,
+    "req": {
+      "fuel": 2,
+      "ammo": 4,
+      "steel": 4,
+      "bauxite": 2
+    }
+  },
+  {
+    "id": 578,
+    "name": "SB2U-2",
+    "rarity": 2,
+    "type": 7,
+    "iconType": 7,
+    "req": {
+      "fuel": 1,
+      "ammo": 3,
+      "steel": 0,
+      "bauxite": 2
+    }
+  },
+  {
+    "id": 579,
+    "name": "13.8cm単装砲 Modèle 1927",
+    "rarity": 2,
+    "type": 1,
+    "iconType": 1,
+    "req": {
+      "fuel": 0,
+      "ammo": 2,
+      "steel": 2,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 580,
+    "name": "55cm三連装魚雷 Modèle 1924",
+    "rarity": 1,
+    "type": 5,
+    "iconType": 5,
+    "req": {
+      "fuel": 1,
+      "ammo": 1,
+      "steel": 1,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 581,
+    "name": "55cm複合配置五連装魚雷 Modèle 1932",
+    "rarity": 2,
+    "type": 5,
+    "iconType": 5,
+    "req": {
+      "fuel": 1,
+      "ammo": 2,
+      "steel": 3,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 582,
+    "name": "20.3cm/50 連装砲 Modèle 1931",
+    "rarity": 2,
+    "type": 2,
+    "iconType": 2,
+    "req": {
+      "fuel": 0,
+      "ammo": 3,
+      "steel": 4,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 583,
+    "name": "20.3cm/50 連装砲改(SHS改良弾)",
+    "rarity": 3,
+    "type": 2,
+    "iconType": 2,
+    "req": {
+      "fuel": 0,
+      "ammo": 4,
+      "steel": 4,
+      "bauxite": 0
+    }
+  },
+  {
+    "id": 584,
+    "name": "Bofors 12cm単装両用砲",
+    "rarity": 2,
+    "type": 1,
+    "iconType": 1,
+    "req": {
+      "fuel": 1,
+      "ammo": 1,
+      "steel": 2,
+      "bauxite": 1
+    }
+  },
+  {
+    "id": 585,
+    "name": "PL101(偵察)",
+    "rarity": 1,
+    "type": 9,
+    "iconType": 9,
+    "req": {
+      "fuel": 1,
+      "ammo": 1,
+      "steel": 0,
+      "bauxite": 1
+    }
+  },
+  {
+    "id": 586,
+    "name": "PL101(爆装)",
+    "rarity": 1,
+    "type": 7,
+    "iconType": 7,
+    "req": {
+      "fuel": 1,
+      "ammo": 2,
+      "steel": 0,
+      "bauxite": 1
+    }
+  },
+  {
+    "id": 587,
+    "name": "V-156F(SB2U輸出型)",
+    "rarity": 2,
+    "type": 7,
+    "iconType": 7,
+    "req": {
+      "fuel": 1,
+      "ammo": 3,
+      "steel": 0,
+      "bauxite": 2
+    }
+  },
+  {
+    "id": 588,
+    "name": "G-36A(F4F輸出型)",
+    "rarity": 3,
+    "type": 6,
+    "iconType": 6,
+    "req": {
+      "fuel": 1,
+      "ammo": 2,
+      "steel": 0,
+      "bauxite": 2
+    }
   }
 ]
