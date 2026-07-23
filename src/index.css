@@ -73,6 +73,13 @@
   box-sizing: border-box;
 }
 
+/* 結果件数が増えてページが縦スクロールするようになると、スクロールバー分だけ
+   ビューポート幅が縮み、中央寄せ(.app-container の margin auto)の表示が左にずれる。
+   ガターを常時確保してスクロールバーの有無で位置が動かないようにする */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   margin: 0;
   background: var(--bg-base);
