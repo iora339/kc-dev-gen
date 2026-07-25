@@ -7,6 +7,7 @@ import { useIsSingleColumn } from "./hooks/useIsSingleColumn";
 import { TYPE_COLORS, DEFAULT_COLOR } from "./components/typeColors";
 import { ResultCard, type CostSortKey, type SortKey } from "./components/ResultCard";
 import { popupStyle } from "./components/popup";
+import { parseShareParams, buildShareUrl } from "./hooks/useShareableState";
 
 // 装備選択タブの分類。typeIds は master 由来の装備カテゴリID（Equipment.type）。
 // typeIds が空の「その他」は、どのカテゴリにも属さない開発可能装備の受け皿
@@ -58,10 +59,35 @@ function usePendingPopupPosition(anchorRef: RefObject<HTMLSpanElement | null>): 
 
 export default function App() {
   const { data, error } = useData();
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [hqLevel, setHqLevel] = useState(120);
-  const [sortKey, setSortKey] = useState<SortKey>("devmat");
-  const [usePendingData, setUsePendingData] = useState(false);
+  // 共有リンクで開いたとき、初回マウント時にURLのクエリから状態を復元する
+  const [initial] = useState(() => parseShareParams(window.location.search));
+  const [selectedIds, setSelectedIds] = useState<number[]>(initial.selectedIds);
+  const [hqLevel, setHqLevel] = useState(initial.hqLevel);
+  const [sortKey, setSortKey] = useState<SortKey>(initial.sortKey);
+  const [usePendingData, setUsePendingData] = useState(initial.usePendingData);
+  const [copied, setCopied] = useState(false);
+
+  // 復元後はクエリを消してアドレスバーをクリーンにする（以降は新規セッションと同一挙動。
+  // 凍結した古いクエリでの誤解を防ぐ）。復元は上の初期化子が先に読むため競合しない
+  useEffect(() => {
+    if (window.location.search) {
+      window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+    }
+  }, []);
+
+  // コピー押下時に、その時点の状態から共有URLを生成してコピーする（アドレスバーは更新しない）
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (copiedTimer.current) clearTimeout(copiedTimer.current); }, []);
+  const copyShareUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(buildShareUrl({ selectedIds, hqLevel, sortKey, usePendingData }));
+      setCopied(true);
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), 1500); // 一定時間後に表示を戻す
+    } catch {
+      // クリップボード権限が無い環境では何もしない
+    }
+  };
   const [showPendingInfo, setShowPendingInfo] = useState(false);
   const pendingInfoRef = useRef<HTMLSpanElement>(null);
   const pendingPopup = usePendingPopupPosition(pendingInfoRef);
@@ -275,7 +301,7 @@ export default function App() {
                 </span>
                 {showPendingInfo && (
                   <div style={popupStyle({ top: "calc(100% + 4px)", ...pendingPopup.position, width: "min(380px, calc(100vw - 32px))", lineHeight: 1.7, color: "var(--text-primary)", whiteSpace: "normal" })}>
-                    検証データが不足していますが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>（2026-7-20時点）を元に暫定の開発率データを作成しました。チェックすると以下が計算に含まれ、<span style={{ display: "inline-block", color: "var(--text-warning)" }}>⚠︎</span>マークが表示されるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
+                    検証データが不足していますが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>（2026-7-25時点）を元に暫定の開発率データを作成しました。チェックすると以下が計算に含まれ、<span style={{ display: "inline-block", color: "var(--text-warning)" }}>⚠︎</span>マークが表示されるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
                     <table style={{ borderCollapse: "collapse", marginTop: 8, width: "100%", fontSize: 12, lineHeight: 1.5, tableLayout: "fixed" }}>
                       <thead>
                         <tr>
@@ -312,23 +338,44 @@ export default function App() {
           {calcError && <p style={{ fontSize: 13, color: "var(--text-danger)" }}>{calcError}</p>}
           {!calcError && (
             <>
-              <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
-                結果 <span style={{ color: "var(--text-primary)" }}>{candidates?.length ?? 0}件</span>
-                {candidates && candidates.length > 0 && (
-                  // 既定(釘)以外のソート中はクリックで既定に戻せる
-                  sortKey === "devmat" ? (
-                    <span style={{ marginLeft: 6 }}>⇅：{sortKeyLabel(sortKey, equipmentById)}</span>
-                  ) : (
-                    <span
-                      onClick={() => setSortKey("devmat")}
-                      title="クリックで既定の釘ソートに戻す"
-                      style={{ marginLeft: 6, cursor: "pointer", textDecoration: "underline dotted", color: "var(--text-accent)" }}
-                    >
-                      ⇅：{sortKeyLabel(sortKey, equipmentById)}
-                    </span>
-                  )
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
+                  結果 <span style={{ color: "var(--text-primary)" }}>{candidates?.length ?? 0}件</span>
+                  {candidates && candidates.length > 0 && (
+                    // 既定(釘)以外のソート中はクリックで既定に戻せる
+                    sortKey === "devmat" ? (
+                      <span style={{ marginLeft: 6 }}>⇅：{sortKeyLabel(sortKey, equipmentById)}</span>
+                    ) : (
+                      <span
+                        onClick={() => setSortKey("devmat")}
+                        title="クリックで既定の釘ソートに戻す"
+                        style={{ marginLeft: 6, cursor: "pointer", textDecoration: "underline dotted", color: "var(--text-accent)" }}
+                      >
+                        ⇅：{sortKeyLabel(sortKey, equipmentById)}
+                      </span>
+                    )
+                  )}
+                </p>
+                {selectedIds.length > 0 && (
+                  <button
+                    onClick={copyShareUrl}
+                    title="現在の選択内容を共有できるURLをコピーします"
+                    style={{
+                      marginLeft: "auto",
+                      fontSize: 12,
+                      padding: "4px 10px",
+                      whiteSpace: "nowrap",
+                      background: "var(--surface-1)",
+                      color: copied ? "var(--text-success)" : "var(--text-secondary)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {copied ? "✓ コピーしました" : "🔗 URLをコピー"}
+                  </button>
                 )}
-              </p>
+              </div>
               {selectedIds.length === 0 ? null : candidates!.length === 0 ? (
                 <p style={{ fontSize: 13, color: "var(--text-muted)" }}>全装備を同時に開発できるレシピはありません。</p>
               ) : (
@@ -359,7 +406,7 @@ export default function App() {
         <p style={{ margin: 0, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 }}>
           <a href="https://github.com/iora339/kc-dev-gen" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>GitHub</a>
           <span style={{ color: "var(--text-muted)" }}>/</span>
-          <span>v0.5.1</span>
+          <span>v0.6.0</span>
         </p>
       </footer>
     </div>
