@@ -372,7 +372,7 @@ export default function App() {
                       cursor: "pointer",
                     }}
                   >
-                    {copied ? "✓ コピーしました" : "🔗 URLをコピー"}
+                    {copied ? "✓ コピーしました" : "🔗 共有URLをコピー"}
                   </button>
                 )}
               </div>
