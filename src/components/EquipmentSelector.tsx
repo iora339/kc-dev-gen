@@ -16,6 +16,8 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
   const [activeCats, setActiveCats] = useState<Set<string>>(new Set());
   // 「選択可能のみ」: 同時開発不可（disabledIds）の装備を一覧から非表示にする絞り込み。カテゴリ絞り込みと併用可能
   const [onlySelectable, setOnlySelectable] = useState(false);
+  // 装備名の部分一致で絞り込む検索文字列（カテゴリ・選択可能のみと AND で合成）
+  const [query, setQuery] = useState("");
   const isSingleColumn = useIsSingleColumn();
 
   function toggleCat(label: string) {
@@ -45,13 +47,18 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
   }, [equipment, developableIds, categories]);
 
   const filteredByCategory = allActive ? categorized : categorized.filter((c) => activeCats.has(c.label));
-  // disabledIds には選択中の装備は含まれない（App.tsx側で除外済み）ため、
-  // 単純に除くだけで「選択中 or 選択可能」な装備のみが残る
-  const visible = onlySelectable
-    ? filteredByCategory
-        .map((cat) => ({ ...cat, items: cat.items.filter((e) => !disabledIds.has(e.id)) }))
-        .filter((cat) => cat.items.length > 0)
-    : filteredByCategory;
+  // カテゴリ・選択可能のみ・名前検索を AND で合成する。
+  // disabledIds には選択中の装備は含まれない（App.tsx側で除外済み）ため、除くだけで「選択中 or 選択可能」が残る。
+  // 英字は toLowerCase で大小無視（例 "mk"→"Mk.I"）、日本語は素の部分一致
+  const q = query.trim().toLowerCase();
+  const visible = filteredByCategory
+    .map((cat) => ({
+      ...cat,
+      items: cat.items.filter(
+        (e) => (!onlySelectable || !disabledIds.has(e.id)) && (!q || e.name.toLowerCase().includes(q))
+      ),
+    }))
+    .filter((cat) => cat.items.length > 0);
 
   // カテゴリタグは青系(accent)、「選択可能のみ」は区別のため緑系(success)で表示する
   const tabStyle = (active: boolean, variant: "accent" | "success" = "accent"): CSSProperties => {
@@ -87,12 +94,43 @@ export function EquipmentSelector({ equipment, developableIds, selectedIds, disa
           選択可能のみ
         </button>
       </div>
+      <div style={{ position: "relative", marginBottom: 10 }}>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="装備名で検索"
+          aria-label="装備名で検索"
+          style={{
+            width: "100%", boxSizing: "border-box", fontSize: 13, padding: "6px 30px 6px 12px",
+            borderRadius: "var(--radius)", border: "0.5px solid var(--border-strong)",
+            background: "var(--surface-2)", color: "var(--text-primary)",
+          }}
+        />
+        {query && (
+          <button
+            onClick={() => setQuery("")}
+            aria-label="検索をクリア"
+            style={{
+              position: "absolute", top: "50%", right: 8, transform: "translateY(-50%)",
+              border: "none", background: "none", cursor: "pointer",
+              color: "var(--text-muted)", fontSize: 14, lineHeight: 1, padding: 2,
+            }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
       <div style={{
         // カテゴリ間の余白は区切り線のmargin(8px)のみで取り、線の上下を等間隔にする
         display: "flex", flexDirection: "column",
         height: isSingleColumn ? 400 : "50vh", minHeight: 120, maxHeight: "80vh", overflowY: "auto", resize: "vertical",
         background: "var(--surface-2)", border: "0.5px solid var(--border)", borderRadius: 12, padding: 14,
       }}>
+        {/* 絞り込みで全滅したときだけ表示。categorized 空（データ未ロード）では出さない */}
+        {visible.length === 0 && categorized.length > 0 && (
+          <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>該当する装備がありません。</p>
+        )}
         {visible.map((cat, i) => (
           <div key={cat.label}>
             {i > 0 && <div style={{ borderTop: "0.5px solid var(--border)", margin: "8px 0" }} />}
