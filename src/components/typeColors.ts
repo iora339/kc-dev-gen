@@ -18,8 +18,8 @@ const color = (anchor: string): ColorDef => {
     bg: `color-mix(in oklch, ${vivid} 13%, var(--surface-2))`,
     // 枠は半透明の --border ではなく不透明サーフェスと混ぜ、発色をはっきりさせる
     border: `color-mix(in oklch, ${vivid} 88%, var(--surface-2))`,
-    // 文字は --text-primary 寄りにして濃くしコントラストを確保する（ダークでは逆に明るくなる）
-    text: `color-mix(in oklch, ${vivid} 45%, var(--text-primary))`,
+    // vivid 比を下げるほど --text-primary 寄り＝ライトでは濃く/ダークでは明るくなり、両テーマで輪郭が締まる
+    text: `color-mix(in oklch, ${vivid} 31%, var(--text-primary))`,
     selectedBg,
     selectedBorder: `color-mix(in oklch, ${selectedBg} 72%, #000)`,
     selectedText: "#fff",
