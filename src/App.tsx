@@ -301,7 +301,7 @@ export default function App() {
                 </span>
                 {showPendingInfo && (
                   <div style={popupStyle({ top: "calc(100% + 4px)", ...pendingPopup.position, width: "min(380px, calc(100vw - 32px))", lineHeight: 1.7, color: "var(--text-primary)", whiteSpace: "normal" })}>
-                    検証データが不足していますが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>（2026-7-25時点）を元に暫定の開発率データを作成しました。チェックすると以下が計算に含まれ、<span style={{ display: "inline-block", color: "var(--text-warning)" }}>⚠︎</span>マークが表示されるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
+                    検証データが不足していますが、<a href="https://github.com/poooi/poi-server/wiki" target="_blank" rel="noopener noreferrer" style={{ color: "var(--text-accent)" }}>poi data dumps</a>（2026-8-2時点）を元に暫定の開発率データを作成しました。チェックすると以下が計算に含まれ、<span style={{ display: "inline-block", color: "var(--text-warning)" }}>⚠︎</span>マークが表示されるようになります。今後の検証によって、数値が変更・削除される可能性が大いにありますのでご注意ください。
                     <table style={{ borderCollapse: "collapse", marginTop: 8, width: "100%", fontSize: 12, lineHeight: 1.5, tableLayout: "fixed" }}>
                       <thead>
                         <tr>
